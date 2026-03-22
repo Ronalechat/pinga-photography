@@ -1,0 +1,68 @@
+/*
+ * PageTransition.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Styles for the page transition wrapper and overlay elements.
+ *
+ * WIPE COLOUR
+ * #2a2a3a — slightly lifted from the page background (#16161D).
+ * Enough contrast to register as a deliberate transition element
+ * without jarring the viewer. Stays within the site's colour world.
+ *
+ * VARIANTS
+ *   liftSlide    — pure Framer Motion opacity + translateY. No overlay.
+ *   diagonalWipe — a #2a2a3a panel sweeps across with a diagonal edge.
+ *   stripReveal  — five vertical strips slide upward with stagger.
+ *                  Shares visual language with KineticGrid column wipes.
+ *
+ * OVERLAY
+ * Fixed-position, full-viewport, pointer-events: none.
+ * Sits above page content (z-index 1000), below SiteHeader (z-index 100
+ * is fine since header uses mix-blend-mode, not z-index stacking).
+ * Plays on every route change — covers the page switch moment.
+ */
+
+/* ── Page content wrapper ─────────────────────────────────────────────────── */
+
+.page {
+  width: 100%;
+}
+
+/* ── Overlay container ────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ── Diagonal wipe panel ──────────────────────────────────────────────────── */
+
+.diagonalPanel {
+  position: absolute;
+  inset: 0;
+  background: #2a2a3a;
+  /* clip-path animated by Framer Motion */
+}
+
+/* ── Strip ────────────────────────────────────────────────────────────────── */
+
+.strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #2a2a3a;
+  /* left, width, transform animated per-strip in component */
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .page,
+  .diagonalPanel,
+  .strip {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,133 @@
+/*
+ * PingaButton.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Two variants — both render as <button>. No Link, no anchor, no triangle.
+ *
+ *   ghost  — text only. Color transitions. Underline draws left→right on hover
+ *            via ::after (width 0 → 100%, 350ms). Resting colour is muted;
+ *            hover colour is full white.
+ *
+ *   sweep  — bordered box. White fill (::before) sweeps in from the left on
+ *            hover (translateX -102% → 0, 380ms). Text sits above the fill at
+ *            z-index 1 and inverts from white to near-black as the fill arrives.
+ *            border-radius: 0 always — enforced here, never override.
+ *
+ * EASING
+ *   cubic-bezier(0.76, 0, 0.24, 1) — fast start, sharp deceleration.
+ *   Feels decisive and physical. Consistent across both variants.
+ *
+ * DISABLED
+ *   :disabled sets opacity 0.35 + cursor not-allowed.
+ *   Hover selectors use :not(:disabled) so animations never fire when disabled.
+ *
+ * BUTTON RESET
+ *   No all:unset — that strips position context and breaks ::before positioning.
+ *   Instead each property is reset individually on .root.
+ *
+ * NO TRIANGLE
+ *   The triangle in EnquiryForm's submit button is hand-coded inside that
+ *   component. It is not a prop or feature of PingaButton.
+ */
+
+/* ── Reset + base ──────────────────────────────────────────────────────────── */
+
+.root {
+  composes: reset from '../_buttonReset.module.css';
+  font-family: var(--font-serif);
+  font-size: var(--font-size-small);
+  letter-spacing: var(--letter-spacing-wider);
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.root:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Ghost ─────────────────────────────────────────────────────────────────── */
+
+.ghost {
+  color: var(--color-text-ghost);
+  transition: color 350ms var(--easing-cinematic);
+}
+
+.ghost:not(:disabled):hover {
+  color: var(--color-text-primary);
+}
+
+/* Underline — draws left to right beneath the text */
+.ghost::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-text-primary);
+  transition: width 350ms var(--easing-cinematic);
+}
+
+.ghost:not(:disabled):hover::after {
+  width: 100%;
+}
+
+/* ── Sweep ─────────────────────────────────────────────────────────────────── */
+
+.sweep {
+  border: 1px solid var(--color-border-sweep);
+  border-radius: 0; /* never rounded — enforced, do not override */
+  padding: 10px 24px;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  transition: border-color 380ms var(--easing-cinematic);
+}
+
+/* White fill layer — sweeps in from the left on hover */
+.sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--color-text-primary);
+  transform: translateX(-102%);
+  transition: transform 380ms var(--easing-cinematic);
+}
+
+.sweep:not(:disabled):hover::before {
+  transform: translateX(0);
+}
+
+.sweep:not(:disabled):hover {
+  border-color: var(--color-text-primary);
+}
+
+/* Text sits above the fill, inverts as fill arrives */
+.sweepText {
+  position: relative;
+  z-index: 1;
+  color: var(--color-text-primary);
+  transition: color 380ms var(--easing-cinematic);
+}
+
+.sweep:not(:disabled):hover .sweepText {
+  color: var(--color-text-dark);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost,
+  .ghost::after,
+  .sweep,
+  .sweep::before,
+  .sweepText {
+    transition: none;
+  }
+}

@@ -1,0 +1,101 @@
+.displayHero {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(48px, 7vw, 80px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.displayLarge {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 72px);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.displayMedium {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(32px, 4.5vw, 50px);
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.displayThin {
+  font-family: var(--font-sans);
+  font-weight: 100;
+  font-size: clamp(36px, 7vw, 64px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.headingMedium {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--font-size-heading-md);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+}
+
+.sentName {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(28px, 5vw, 48px);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.eyebrow {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: var(--font-size-eyebrow);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-text-muted-mid);
+}
+
+.body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: var(--font-size-body);
+  line-height: 1.8;
+  color: var(--color-text-muted-high);
+}
+
+.label {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: var(--font-size-eyebrow);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-text-muted-mid);
+}
+
+.small {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: var(--font-size-eyebrow);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-text-muted-low);
+}
+
+.navLink {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-text-muted-mid);
+}

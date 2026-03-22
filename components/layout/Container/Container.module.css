@@ -1,0 +1,31 @@
+/*
+ * Container.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Centres content within a consistent column. Use for pages, sections,
+ * and individual components alike — anywhere content needs consistent
+ * horizontal spacing and a max-width constraint.
+ *
+ * This component handles spacing only.
+ * Typography, colour, and vertical spacing belong to child components.
+ *
+ * USAGE EXAMPLES
+ *   Full page:    app/gallery/page.tsx wraps everything in <Container>
+ *   Page section: <Container><EnquiryForm /></Container>
+ *   Component:    <Container><AboutPreview blok={...} /></Container>
+ *
+ * DO NOT WRAP — these are intentionally full width:
+ *   ScrollHero · SiteHeader · SiteFooter
+ *
+ * PADDING
+ *   clamp(24px, 4vw, 40px) scales from 24px on mobile to 40px
+ *   on desktop. No breakpoint required.
+ */
+
+.root {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(24px, 4vw, 40px);
+  padding-right: clamp(24px, 4vw, 40px);
+}

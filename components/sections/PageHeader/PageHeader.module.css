@@ -1,0 +1,12 @@
+.root {
+  padding-top: 64px;
+  padding-bottom: 0;
+}
+
+.rule {
+  height: 0.5px;
+  background: var(--color-border-divider);
+  border: none;
+  margin-top: 32px;
+  margin-bottom: 0;
+}

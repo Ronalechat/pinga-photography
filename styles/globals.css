@@ -1,0 +1,147 @@
+/* ── Jean-Luc @font-face ─────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Jean-Luc';
+  src: url('/fonts/jeanlucweb-bold.woff') format('woff'),
+       url('/fonts/jeanlucweb-bold.otf')  format('opentype');
+  font-weight: 700;
+  font-style:  normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jean-Luc';
+  src: url('/fonts/jeanlucweb-thin.woff') format('woff'),
+       url('/fonts/jeanlucweb-thin.otf')  format('opentype');
+  font-weight: 100;
+  font-style:  normal;
+  font-display: swap;
+}
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+
+:root {
+
+  /* ── Backgrounds ─────────────────────────────────────── */
+  --color-bg-primary:      #16161D;
+  --color-bg-surface:      #3A3A6E;
+  --color-bg-light:        #F2F2FC;
+  --color-bg-input:        rgba(242,242,252,0.05);
+  --color-bg-input-focus:  rgba(242,242,252,0.08);
+
+  /* ── Interactive ─────────────────────────────────────── */
+  --color-accent:          #3C3C91;
+  --color-accent-hover:    #3A3A6E;
+
+  /* ── Text ────────────────────────────────────────────── */
+  --color-text-primary:    #F2F2FC;
+  --color-text-dark:       #16161D;
+  --color-text-muted:      #B3B3BA;
+
+  /* ── Borders ─────────────────────────────────────────── */
+  --color-border-input:    rgba(179,179,186,0.35);
+  --color-border-divider:  rgba(242,242,252,0.08);
+  --color-border-hover:    #F2F2FC;
+  --color-border-neutral:  #B3B3BA;
+
+  /* ── States ──────────────────────────────────────────── */
+  --color-selected-bg:     #F2F2FC;
+  --color-selected-text:   #16161D;
+  --color-error:           #e05a5a;
+
+  /* ── Typography ──────────────────────────────────────── */
+  --font-sans:   'Jean-Luc', system-ui, -apple-system, sans-serif;
+  --font-serif:  Georgia, 'Times New Roman', serif;
+
+  --font-weight-thin:   100;
+  --font-weight-normal: 400;
+  --font-weight-bold:   700;
+
+  --font-size-eyebrow:    9px;
+  --font-size-caption:    10px;
+  --font-size-small:      11px;
+  --font-size-body:       13px;
+  --font-size-body-lg:    16px;
+  --font-size-heading-md: 28px;
+  --font-size-heading:    22px;
+  --font-size-heading-lg: 36px;
+  --font-size-display:    56px;
+
+  --letter-spacing-tight:  -0.01em;
+  --letter-spacing-wide:    0.08em;
+  --letter-spacing-wider:   0.14em;
+  --letter-spacing-widest:  0.3em;
+
+  /* ── Spacing ─────────────────────────────────────────── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   12px;
+  --space-lg:   16px;
+  --space-xl:   24px;
+  --space-xxl:  32px;
+  --space-xxxl: 48px;
+
+  /* ── Motion ──────────────────────────────────────────── */
+  --easing-standard:  cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-cinematic: cubic-bezier(0.76, 0, 0.24, 1);
+  --easing-spring:    cubic-bezier(0.22, 1, 0.36, 1);
+  --easing-exit:      cubic-bezier(0.76, 0, 0.24, 1);
+
+  --duration-fast:     180ms;
+  --duration-standard: 280ms;
+  --duration-slow:     420ms;
+  --duration-reveal:   850ms;
+
+  /* ── Border radius ───────────────────────────────────── */
+  --radius-sm:   2px;
+  --radius-md:   3px;
+  --radius-pill: 20px;
+  --radius-full: 50%;
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+}
+
+html,
+body {
+  max-width: 100vw;
+}
+
+body {
+  min-height: 100%;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * .clip-x — horizontal overflow clipping without breaking position:sticky.
+ *
+ * Use on individual sections (carousels, grids) that generate horizontal
+ * overflow. Do NOT apply to .page-wrapper or any ancestor of ScrollHero —
+ * Chromium can interrupt the sticky scroll-container chain when any ancestor
+ * has a non-`visible` overflow value, causing the sticky stage to pin to
+ * that ancestor (which has height:auto and doesn't scroll) instead of the
+ * viewport.
+ */
+.clip-x {
+  overflow-x: clip;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

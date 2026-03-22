@@ -1,0 +1,164 @@
+/*
+ * SiteFooter.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Requires tokens.css imported globally in app/layout.tsx or _app.tsx.
+ *
+ * LAYOUT RULE
+ * Two columns, consistent throughout:
+ *   Left  → always left-aligned  (name, copyright)
+ *   Right → always right-aligned (links, location)
+ *
+ * Both .main and .bar share the same grid column widths so the right
+ * column edge is structurally shared across the rule — no manual offsets.
+ *
+ * OPTICAL ALIGNMENT
+ * .name uses text-box / leading-trim to crop the font's built-in ascender
+ * space, so the element box top sits at cap height. This aligns the cap
+ * height of the display-size name with the top of the small links beside
+ * it — no negative margin hacks required.
+ *
+ * EXTERNAL LINK ARROW
+ * Desktop: arrow leads (order: -1, left of text). Right-aligned column
+ *   means text right edges are flush; arrow protrudes left harmlessly.
+ * Mobile:  arrow trails (order: 1, right of text). Left-aligned column
+ *   means text left edges are flush; arrow protrudes right harmlessly.
+ */
+
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+
+.root {
+  background: var(--color-bg-primary);
+  padding: 64px 40px 32px;
+}
+
+/* ── Shared two-column grid ───────────────────────────────────────────────── */
+
+.main,
+.bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.main { margin-bottom: 40px; }
+
+/* ── Name (left column, above rule) ──────────────────────────────────────── */
+
+.name {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  font-size: clamp(32px, 4.5vw, 50px);
+  color: var(--color-text-primary);
+  line-height: 1;
+  letter-spacing: 0.12em;
+
+  /* Optical alignment — crops ascender space so box top = cap height */
+  text-box: trim-both cap alphabetic;
+  leading-trim: both;     /* legacy property, broader support */
+  text-edge: cap alphabetic;
+}
+
+/* ── Links (right column, above rule) ────────────────────────────────────── */
+
+.links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.link {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* rgba(179,179,186,0.65) → ~4.1:1 on #16161D ✓ passes AA large text */
+  color: rgba(179, 179, 186, 0.65);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color var(--duration-fast) var(--easing-standard);
+}
+
+.link:hover {
+  color: var(--color-text-primary);
+}
+
+/*
+ * External link arrow — leads on desktop, trails on mobile.
+ * Swap via `order` only; no markup duplication needed.
+ */
+.arrow {
+  font-size: 9px;
+  opacity: 0.5;
+  position: relative;
+  top: -1px;
+  order: -1; /* desktop: before text */
+  transition:
+    transform var(--duration-fast) var(--easing-standard),
+    opacity   var(--duration-fast) var(--easing-standard);
+}
+
+.link:hover .arrow {
+  transform: translate(-1px, -2px);
+  opacity: 0.9;
+}
+
+/* ── Rule ─────────────────────────────────────────────────────────────────── */
+
+.rule {
+  height: 0.5px;
+  background: var(--color-border-divider);
+  margin-bottom: 18px;
+}
+
+/* ── Bar (below rule) ─────────────────────────────────────────────────────── */
+
+.copy,
+.location {
+  font-family: var(--font-serif);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  /* rgba(179,179,186,0.45) — metadata, not actionable. Intentionally quieter. */
+  color: rgba(179, 179, 186, 0.45);
+}
+
+.location {
+  text-align: right;
+}
+
+/* ── Mobile (max 767px) ───────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .root { padding: 48px 24px 28px; }
+
+  /* Collapse to single column — everything left-aligned */
+  .main,
+  .bar {
+    grid-template-columns: 1fr;
+  }
+
+  .main { gap: 28px; margin-bottom: 32px; }
+  .bar  { gap: 6px; }
+
+  .name { font-size: 34px; }
+
+  .links    { align-items: flex-start; }
+  .location { text-align: left; }
+
+  /* Arrow swaps to trailing on mobile */
+  .arrow { order: 1; }
+
+  .link:hover .arrow {
+    transform: translate(2px, -2px);
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .arrow { transition: none; }
+}

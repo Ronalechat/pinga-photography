@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Carousel</title>
+  <link rel="stylesheet" href="tokens.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /*
+     * ImageCarousel
+     * ─────────────────────────────────────────────────────
+     * Three logical sections:
+     *   .carousel       — CarouselContainer: owns layout and dimensions
+     *   .viewer         — CarouselViewer: full-bleed image display
+     *   .controls       — CarouselControls: ghost arrows + counter
+     *
+     * SWAPPING IN REAL IMAGES
+     * Inside each slide, replace the placeholder fill div with:
+     *   <img src="/images/your-photo.jpg"
+     *        style="width:100%; height:100%; object-fit:cover; display:block;" />
+     */
+
+    /* ── CarouselContainer ────────────────────────────── */
+    .carousel {
+      background: var(--color-bg-primary);
+      /* Height is intentionally flexible — set via inline style or parent */
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── CarouselViewer ───────────────────────────────── */
+    .viewer {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .slide.active { opacity: 1; }
+
+    /* Placeholder fill — replace inner content with <img> */
+    .slide-fill {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-placeholder-label {
+      font-family: var(--font-serif);
+      font-size: var(--font-size-small);
+      letter-spacing: var(--letter-spacing-widest);
+      text-transform: uppercase;
+      color: rgba(242,242,252,0.15);
+    }
+
+    /* Click zones — left half = prev, right half = next */
+    .zone {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 50%;
+      z-index: 10;
+    }
+
+    .zone-prev { left: 0;  cursor: w-resize; }
+    .zone-next { right: 0; cursor: e-resize; }
+
+    /* ── CarouselControls ─────────────────────────────── */
+    .controls {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 22px 14px;
+      border-top: 0.5px solid var(--color-border-divider);
+    }
+
+    .sep {
+      width: 0.5px;
+      height: 10px;
+      background: rgba(242,242,252,0.1);
+      flex-shrink: 0;
+    }
+
+    .counter {
+      font-family: var(--font-serif);
+      font-size: var(--font-size-small);
+      letter-spacing: var(--letter-spacing-wider);
+      color: rgba(242,242,252,0.25);
+      white-space: nowrap;
+    }
+
+    .counter em {
+      font-style: normal;
+      color: rgba(242,242,252,0.7);
+    }
+
+    .counter-sep {
+      margin: 0 4px;
+      color: rgba(242,242,252,0.12);
+    }
+  </style>
+</head>
+<body>
+
+<div class="carousel">
+
+  <!-- CarouselViewer -->
+  <div class="viewer" id="viewer">
+    <div class="zone zone-prev" id="zonePrev"></div>
+    <div class="zone zone-next" id="zoneNext"></div>
+  </div>
+
+  <!-- CarouselControls -->
+  <div class="controls" id="controls"></div>
+
+</div>
+
+<script>
+  /*
+   * SLIDES config — replace color with src for real images.
+   * label is shown on placeholders only; remove when real images land.
+   *
+   * Example with real image:
+   *   { src: '/images/street-01.jpg', label: 'Street' }
+   */
+  const SLIDES = [
+    { color: '#16202e', label: 'Image 01' },
+    { color: '#2a1a1a', label: 'Image 02' },
+    { color: '#16281e', label: 'Image 03' },
+    { color: '#28241a', label: 'Image 04' },
+    { color: '#1a1a28', label: 'Image 05' },
+    { color: '#241a1a', label: 'Image 06' },
+    { color: '#1a2418', label: 'Image 07' },
+    { color: '#16202e', label: 'Image 08' },
+    { color: '#241a24', label: 'Image 09' },
+    { color: '#1a2822', label: 'Image 10' },
+    { color: '#281a1a', label: 'Image 11' },
+    { color: '#1a1c28', label: 'Image 12' },
+    { color: '#1c1a28', label: 'Image 13' },
+  ]
+
+  const COUNT  = SLIDES.length
+  let current  = 0
+
+  const viewer   = document.getElementById('viewer')
+  const controls = document.getElementById('controls')
+
+  // ── CarouselViewer: build slides ────────────────────────────────────────
+
+  const slideEls = SLIDES.map((s, i) => {
+    const slide = document.createElement('div')
+    slide.className = 'slide' + (i === 0 ? ' active' : '')
+
+    const fill = document.createElement('div')
+    fill.className = 'slide-fill'
+
+    if (s.src) {
+      // Real image
+      const img = document.createElement('img')
+      img.src = s.src
+      img.alt = s.label || ''
+      img.style.cssText = 'width:100%; height:100%; object-fit:cover; display:block;'
+      fill.appendChild(img)
+    } else {
+      // Placeholder
+      fill.style.background = s.color
+      const lbl = document.createElement('span')
+      lbl.className = 'slide-placeholder-label'
+      lbl.textContent = s.label
+      fill.appendChild(lbl)
+    }
+
+    slide.appendChild(fill)
+    viewer.insertBefore(slide, document.getElementById('zonePrev'))
+    return slide
+  })
+
+  // ── CarouselControls: build ghost buttons ──────────────────────────────
+  //
+  // All button styles applied inline — `border: none` via CSS classes is
+  // unreliable across browser/iframe environments. Inline guarantees it.
+
+  function makeBtn(dir) {
+    const btn = document.createElement('button')
+    btn.setAttribute('aria-label', dir === 'prev' ? 'Previous image' : 'Next image')
+    btn.style.cssText = `
+      appearance: none;
+      -webkit-appearance: none;
+      background: none;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.3;
+      transition: opacity 0.18s ease;
+    `
+
+    // Triangle shape lives in a child div — isolates its border-* trick
+    // from the button element itself
+    const tri = document.createElement('div')
+    if (dir === 'prev') {
+      tri.style.cssText = `
+        width: 0; height: 0;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        border-right: 6px solid #F2F2FC;
+        border-left: none;
+      `
+    } else {
+      tri.style.cssText = `
+        width: 0; height: 0;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        border-left: 6px solid #F2F2FC;
+        border-right: none;
+      `
+    }
+
+    btn.appendChild(tri)
+
+    btn.addEventListener('mouseenter', () => btn.style.opacity = '0.85')
+    btn.addEventListener('mouseleave', () => btn.style.opacity = '0.3')
+    btn.addEventListener('mousedown',  () => btn.style.opacity = '0.5')
+    btn.addEventListener('mouseup',    () => btn.style.opacity = '0.85')
+
+    return btn
+  }
+
+  const btnPrev = makeBtn('prev')
+  const btnNext = makeBtn('next')
+
+  const sep = document.createElement('div')
+  sep.className = 'sep'
+
+  const counter = document.createElement('div')
+  counter.className = 'counter'
+  counter.innerHTML =
+    '<em id="cCurrent">01</em>' +
+    '<span class="counter-sep">/</span>' +
+    '<span id="cTotal">' + String(COUNT).padStart(2, '0') + '</span>'
+
+  controls.append(btnPrev, sep, btnNext, counter)
+
+  const cCurrent = document.getElementById('cCurrent')
+
+  // ── CarouselContainer: navigation logic ───────────────────────────────
+
+  function goTo(i) {
+    slideEls[current].classList.remove('active')
+    current = ((i % COUNT) + COUNT) % COUNT
+    slideEls[current].classList.add('active')
+    cCurrent.textContent = String(current + 1).padStart(2, '0')
+  }
+
+  const prev = () => goTo(current - 1)
+  const next = () => goTo(current + 1)
+
+  btnPrev.addEventListener('click', e => { e.stopPropagation(); prev() })
+  btnNext.addEventListener('click', e => { e.stopPropagation(); next() })
+  document.getElementById('zonePrev').addEventListener('click', prev)
+  document.getElementById('zoneNext').addEventListener('click', next)
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  prev()
+    if (e.key === 'ArrowRight') next()
+  })
+
+  // Touch swipe
+  let txS = 0, tyS = 0
+  viewer.addEventListener('touchstart', e => {
+    txS = e.touches[0].clientX
+    tyS = e.touches[0].clientY
+  }, { passive: true })
+
+  viewer.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - txS
+    const dy = e.changedTouches[0].clientY - tyS
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      dx < 0 ? next() : prev()
+    }
+  }, { passive: true })
+</script>
+
+</body>
+</html>

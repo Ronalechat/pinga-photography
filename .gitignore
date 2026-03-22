@@ -1,0 +1,42 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Environment variables (NEVER commit these) ────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Next.js build output ─────────────────────────────────────────────────────
+.next/
+build/
+dist/
+
+# ── Storybook build output ────────────────────────────────────────────────────
+storybook-static/
+
+# ── TypeScript build cache ────────────────────────────────────────────────────
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+storybook-install.log
+storybook.log
+
+# ── Dev certificates (private keys — do not expose even if self-signed) ───────
+certificates/
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Editor ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

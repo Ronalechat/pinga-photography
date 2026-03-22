@@ -1,0 +1,140 @@
+/*
+ * AboutSection.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Full "about" page section — Option 2.
+ * Name lifts from beneath clip container, photo wipes up, text fades in.
+ *
+ * JUMP FIX
+ * Removing .revealed while a CSS transition is active causes the browser
+ * to reverse-animate (jump). Fix in component:
+ *   1. Strip transition via inline style (instant snap to start state)
+ *   2. Force reflow
+ *   3. Restore transition, add .revealed — clean forward animation
+ *
+ * TYPOGRAPHY
+ * .nameLift uses displayThin variant values with transform/transition added.
+ * .surname is a colour override on displayThin — intentionally muted.
+ * Eyebrow and body use Typography component variants.
+ */
+
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+
+.root {
+  background: var(--color-bg-primary);
+  padding: 72px 0 80px;
+}
+
+/* ── Name reveal ─────────────────────────────────────────────────────────── */
+
+.nameClip {
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+/*
+ * displayThin values + transform for the lift animation.
+ * Transition managed inline by component to prevent reverse jump.
+ * text-box / leading-trim: crops ascender space for optical alignment.
+ */
+.nameLift {
+  display: block;
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-thin);
+  font-size: clamp(36px, 7vw, 64px);
+  color: var(--color-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  transform: translateY(110%);
+  text-box: trim-both cap alphabetic;
+  leading-trim: both;
+  text-edge: cap alphabetic;
+}
+
+.nameLift.revealed {
+  transform: translateY(0);
+}
+
+/*
+ * Surname — decorative contrast against forename.
+ * At display scale (36–64px) this is above WCAG AA large text (3:1).
+ */
+.surname {
+  color: rgba(179,179,186,0.55);
+}
+
+/* ── Content grid ─────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 36px;
+  align-items: start;
+}
+
+/* ── Photo ───────────────────────────────────────────────────────────────── */
+
+.photoWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  clip-path: inset(0 0 100% 0);
+  /* Transition managed inline by component */
+}
+
+.photoWrap.revealed {
+  clip-path: inset(0 0 0% 0);
+}
+
+.photo {
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* ── Text ─────────────────────────────────────────────────────────────────── */
+
+.textCol {
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.textItem {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity  0.55s var(--easing-standard) 0.25s,
+    transform 0.55s var(--easing-standard) 0.25s;
+}
+
+.textItemBody {
+  transition-delay: 0.35s;
+}
+
+.textItem.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .root    { padding: 48px 0 56px; }
+  .grid    { grid-template-columns: 1fr; }
+  .nameClip { margin-bottom: 28px; }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .nameLift,
+  .photoWrap,
+  .textItem {
+    transition: none !important;
+  }
+
+  .nameLift.revealed   { transform: translateY(0); }
+  .photoWrap.revealed  { clip-path: inset(0 0 0% 0); }
+  .textItem.revealed   { opacity: 1; transform: none; }
+}

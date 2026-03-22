@@ -1,0 +1,7 @@
+/* Hover state for card meta — requires a CSS rule because it
+   targets a child element on parent hover; cannot be done with
+   inline styles alone. */
+[data-reveal]:hover .cardMeta {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
