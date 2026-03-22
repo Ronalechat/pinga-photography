@@ -34,6 +34,7 @@
   padding: 22px 28px;
   /* No background — floats transparently over content */
   pointer-events: none; /* let clicks pass through the empty header area */
+  mix-blend-mode: difference;
 }
 
 /* ── Cluster — stacked left ───────────────────────────────────────────────── */
@@ -55,7 +56,6 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: white;
-  mix-blend-mode: difference;
   text-decoration: none;
   line-height: 1;
   cursor: pointer;
@@ -75,7 +75,6 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: white;
-  mix-blend-mode: difference;
   text-decoration: none;
   line-height: 1;
   transition: opacity var(--duration-fast) var(--easing-standard);
@@ -90,7 +89,6 @@
   height: 2px;
   border-radius: 50%;
   background: white;
-  mix-blend-mode: difference;
   opacity: 0.4;
   flex-shrink: 0;
 }

@@ -14,8 +14,8 @@
  *
  * ENQUIRE LINK BEHAVIOUR
  * - On the landing page (/): intercepts click and scrollIntoView on #enquire.
- * - On all other pages: navigates to /#enquire (Next.js handles the hash).
- * Both cases use href="/#enquire" — the intercept is handled inside the
+ * - On all other pages: navigates to /enquiry (Next.js follows the href).
+ * Both cases use href="/enquiry" — the intercept is handled inside the
  * component by comparing pathname to "/".
  *
  * OPTICAL ALIGNMENT
@@ -79,7 +79,7 @@ export default function SiteFooter({
       e.preventDefault()
       document.getElementById('enquire')?.scrollIntoView({ behavior: 'smooth' })
     }
-    // Other pages: default link behaviour navigates to /#enquire
+    // Other pages: default link behaviour navigates to /enquiry
   }, [pathname])
 
   return (
@@ -111,7 +111,7 @@ export default function SiteFooter({
           </a>
 
           <Link
-            href="/#enquire"
+            href="/enquiry"
             className={styles.link}
             onClick={handleEnquire}
           >

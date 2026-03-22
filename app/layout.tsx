@@ -30,10 +30,12 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <StoryblokProvider>
           <SiteHeader />
-          <PageTransition variant="diagonalWipe">
-            {children}
-          </PageTransition>
-          <SiteFooter />
+          <div style={{ isolation: 'isolate' }}>
+            <PageTransition variant="diagonalWipe">
+              {children}
+            </PageTransition>
+            <SiteFooter />
+          </div>
         </StoryblokProvider>
       </body>
     </html>

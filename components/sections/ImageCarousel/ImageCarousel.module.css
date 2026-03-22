@@ -1,0 +1,10 @@
+.root {
+  height: 100vh;
+}
+
+@media (max-width: 767px) {
+  .root {
+    height: auto;
+    aspect-ratio: 3 / 2;
+  }
+}

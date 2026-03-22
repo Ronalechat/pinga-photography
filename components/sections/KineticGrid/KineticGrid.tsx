@@ -198,7 +198,7 @@ function Lightbox({ list, index, colors, onClose, onNavigate, onJump }: {
 
   return (
     <div
-      style={{ position: 'absolute', inset: 0, background: COLOR.bgPrimary, zIndex: 200, display: 'flex', flexDirection: 'column' }}
+      style={{ position: 'fixed', inset: 0, background: COLOR.bgPrimary, zIndex: 200, display: 'flex', flexDirection: 'column' }}
       onTouchStart={e => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
       onTouchEnd={e => {
         const dx = e.changedTouches[0].clientX - touchStart.current.x
@@ -219,21 +219,16 @@ function Lightbox({ list, index, colors, onClose, onNavigate, onJump }: {
       </div>
 
       {/* Image stage */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: `0 ${SPACE.xxxl}` }}>
-        <div style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
-          <div style={{ width: 300, maxWidth: '100%', paddingTop: ratioPct(item.ratio) }} />
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {item.src ? (
+          <img src={item.src} alt={`${item.cat} ${item.num}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        ) : (
           <div style={{ position: 'absolute', inset: 0, background: color, borderRadius: RADIUS.md, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: SPACE.sm }}>
-            {item.src ? (
-              <img src={item.src} alt={`${item.cat} ${item.num}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            ) : (
-              <>
-                <span style={{ fontFamily: FONT.serif, fontSize: FONT_SIZE.small, letterSpacing: LETTER_SPACING.widest, textTransform: 'uppercase', color: COLOR.textMuted }}>{item.cat}</span>
-                <span style={{ fontFamily: FONT.serif, fontSize: '12px', color: 'rgba(179,179,186,0.25)', letterSpacing: LETTER_SPACING.wide }}>{ratioLabel(item.ratio)}</span>
-                <span style={{ fontFamily: FONT.serif, fontSize: '40px', color: 'rgba(179,179,186,0.12)' }}>{item.num}</span>
-              </>
-            )}
+            <span style={{ fontFamily: FONT.serif, fontSize: FONT_SIZE.small, letterSpacing: LETTER_SPACING.widest, textTransform: 'uppercase', color: COLOR.textMuted }}>{item.cat}</span>
+            <span style={{ fontFamily: FONT.serif, fontSize: '12px', color: 'rgba(179,179,186,0.25)', letterSpacing: LETTER_SPACING.wide }}>{ratioLabel(item.ratio)}</span>
+            <span style={{ fontFamily: FONT.serif, fontSize: '40px', color: 'rgba(179,179,186,0.12)' }}>{item.num}</span>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Nav buttons */}
@@ -251,8 +246,13 @@ function Lightbox({ list, index, colors, onClose, onNavigate, onJump }: {
         {list.map((t, i) => (
           <div key={t.num}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJump(i) }}
-            style={{ ...getThumbStyles(i === index, thumbWidth(t.ratio)), background: colors[t.cat] ?? COLOR.bgSurface }}
-          >{t.num}</div>
+            style={{ ...getThumbStyles(i === index, thumbWidth(t.ratio)), background: colors[t.cat] ?? COLOR.bgSurface, overflow: 'hidden', position: 'relative' }}
+          >
+            {t.src
+              ? <img src={t.src} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              : t.num
+            }
+          </div>
         ))}
       </div>
     </div>
@@ -280,16 +280,13 @@ export default function KineticGrid({
 
   const activeList = activeFilter === 'all' ? allItems : (categories[activeFilter] ?? [])
 
-  // Scroll-based reveal — same approach as ScrollHero
+  // Scroll-based reveal — uses getBoundingClientRect so it works in any scroll context
   const checkReveals = useCallback(() => {
     const shell = shellRef.current
     if (!shell) return
-    const shellTop    = shell.scrollTop
-    const shellBottom = shellTop + shell.clientHeight
     shell.querySelectorAll<HTMLElement>('[data-reveal="pending"]').forEach(card => {
-      let el: HTMLElement | null = card, elTop = 0
-      while (el && el !== shell) { elTop += el.offsetTop; el = el.offsetParent as HTMLElement }
-      if (elTop + card.offsetHeight > shellTop && elTop < shellBottom - 40) {
+      const rect = card.getBoundingClientRect()
+      if (rect.bottom > 0 && rect.top < window.innerHeight - 40) {
         const col = parseInt(card.dataset.col ?? '0')
         card.style.clipPath   = 'inset(0 0 0 0)'
         card.style.transition = `clip-path ${DURATION.reveal} ${EASING.cinematic} ${STAGGER[col] ?? 0}ms`
@@ -301,17 +298,22 @@ export default function KineticGrid({
   useEffect(() => {
     const shell = shellRef.current
     if (!shell) return
-    shell.scrollTop = 0
+    shell.scrollIntoView({ behavior: 'instant' })
     requestAnimationFrame(checkReveals)
-    shell.addEventListener('scroll', checkReveals, { passive: true })
-    return () => shell.removeEventListener('scroll', checkReveals)
+    window.addEventListener('scroll', checkReveals, { passive: true })
+    return () => window.removeEventListener('scroll', checkReveals)
   }, [activeFilter, checkReveals])
+
+  useEffect(() => {
+    document.body.style.overflow = lightbox ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [lightbox])
 
   const cols: PhotoConfig[][] = [[], [], []]
   activeList.forEach((item, i) => cols[i % 3].push(item))
 
   return (
-    <div ref={shellRef} style={{ position: 'relative', height: '100vh', overflowY: 'scroll', background: COLOR.bgPrimary, WebkitOverflowScrolling: 'touch' }}>
+    <div ref={shellRef} style={{ position: 'relative', background: COLOR.bgPrimary }}>
       <div style={{ padding: `${SPACE.xxl} ${SPACE.lg} 80px` }}>
 
         {/* Header */}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { COLOR, FONT, FONT_SIZE, LETTER_SPACING, SPACE, DURATION } from '@tokens'
+import styles from './ImageCarousel.module.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,7 @@ export interface ImageCarouselProps {
   slides: SlideConfig[]
   /**
    * Height of the carousel. Accepts any valid CSS height value.
-   * @default '100vh'
+   * When omitted, CSS handles the default: 100vh on desktop, 3:2 aspect ratio on mobile.
    */
   height?: string
 }
@@ -239,7 +240,7 @@ function Triangle({ dir }: { dir: 'prev' | 'next' }) {
 
 // ─── CarouselContainer ────────────────────────────────────────────────────────
 
-export default function ImageCarousel({ slides, height = '100vh' }: ImageCarouselProps) {
+export default function ImageCarousel({ slides, height }: ImageCarouselProps) {
   const [current, setCurrent] = useState(0)
   const count = slides.length
 
@@ -261,14 +262,17 @@ export default function ImageCarousel({ slides, height = '100vh' }: ImageCarouse
   }, [prev, next])
 
   return (
-    <div style={{
-      background: COLOR.bgPrimary,
-      height,
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      userSelect: 'none',
-    }}>
+    <div
+      className={styles.root}
+      style={{
+        background: COLOR.bgPrimary,
+        ...(height !== undefined && { height }),
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        userSelect: 'none',
+      }}
+    >
       <CarouselViewer
         slides={slides}
         current={current}

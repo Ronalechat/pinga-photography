@@ -267,18 +267,19 @@ export default function EnquiryForm({
 
           {/* Submit row */}
           <div className={styles.submitRow}>
-            {/*
-             * Decorative right-pointing triangle.
-             * Hand-coded here — not a PingaButton feature.
-             * See docs/ui-components.md — The triangle note.
-             */}
-            <span className={styles.triangle} aria-hidden="true" />
             <PingaButton
               variant="sweep"
               type="submit"
               disabled={status === 'sending'}
+              className={styles.submitButton}
             >
               {status === 'sending' ? 'Sending…' : 'Send enquiry'}
+              {/*
+               * Decorative right-pointing triangle — inside the button, after the text.
+               * Hand-coded here — not a PingaButton feature.
+               * See docs/ui-components.md — The triangle note.
+               */}
+              <span className={styles.triangle} aria-hidden="true" />
             </PingaButton>
           </div>
 

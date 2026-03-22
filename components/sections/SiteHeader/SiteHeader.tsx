@@ -26,7 +26,7 @@
  *
  * ENQUIRE SCROLL INTERCEPT
  * On the landing page (/) the Enquire link scrolls to #enquire smoothly
- * rather than navigating. On other pages it navigates to /#enquire.
+ * rather than navigating. On other pages it navigates to /enquiry.
  *
  * STORYBLOK
  * The nav links are hardcoded since this is a two-link site. If the nav
@@ -46,7 +46,7 @@ import styles from './SiteHeader.module.css'
 
 const NAV_LINKS = [
   { label: 'Gallery', href: '/gallery' },
-  { label: 'Enquire', href: '/#enquire', scrollId: 'enquire' },
+  { label: 'Enquire', href: '/enquiry', scrollId: 'enquire' },
 ] as const
 
 // ─── Props ───────────────────────────────────────────────────────────────────

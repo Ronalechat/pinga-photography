@@ -191,7 +191,6 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
   margin-top: 8px;
 }
 
@@ -201,13 +200,20 @@
  * Quiet at rest (25% opacity). Not a PingaButton feature — hand-coded here.
  */
 .triangle {
-  display: block;
+  display: inline-block;
   flex-shrink: 0;
   width: 0;
   height: 0;
+  margin-left: 12px;
   border-top:    5px solid transparent;
   border-bottom: 5px solid transparent;
   border-left:   8px solid rgba(242, 242, 252, 0.25);
+  transition: border-left-color 380ms var(--easing-cinematic);
+}
+
+/* Invert triangle colour as sweep fill arrives — matches sweepText inversion */
+.submitButton:not(:disabled):hover .triangle {
+  border-left-color: var(--color-text-dark);
 }
 
 /* ── Sent confirmation ────────────────────────────────────────────────────── */

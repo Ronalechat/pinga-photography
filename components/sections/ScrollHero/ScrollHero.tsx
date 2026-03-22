@@ -96,11 +96,11 @@ export default function ScrollHero({
   const router = useRouter()
 
   // Auto-calculate from slide count, allow manual override
-  // scrollMultiplier: ~1.8vh of scroll per slide + 1vh buffer
-  //   3 slides → 6.4, 5 slides → 10, 8 slides → 15.4
+  // scrollMultiplier: ~0.9vh of scroll per slide + 1vh buffer
+  //   3 slides → 3.7, 5 slides → 5.5, 8 slides → 8.2
   // transitionZone: fewer slides = longer crossfade, more = snappier
   //   3 slides → 0.32, 5 slides → 0.25, 8 slides → 0.21
-  const resolvedMultiplier  = scrollMultiplier ?? count * 1.8 + 1
+  const resolvedMultiplier  = scrollMultiplier ?? count * 0.9 + 1
   const resolvedTransition  = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
 
   const outerRef  = useRef<HTMLDivElement>(null)
