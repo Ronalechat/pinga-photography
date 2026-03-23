@@ -91,7 +91,7 @@ export default function Lightbox({
       {/* Top bar */}
       <div className={styles.topBar}>
         <Typography variant="eyebrow">{item.cat}</Typography>
-        <Typography variant="small">
+        <Typography variant="meta">
           {String(index + 1).padStart(2, '0')} / {String(list.length).padStart(2, '0')}
         </Typography>
         <button
@@ -110,7 +110,7 @@ export default function Lightbox({
           />
         ) : (
           <div className={styles.placeholder} style={{ background: color }}>
-            <Typography variant="small">{item.cat}</Typography>
+            <Typography variant="label">{item.cat}</Typography>
             <Typography variant="eyebrow" color="rgba(179,179,186,0.25)">{ratioLabel(item.ratio)}</Typography>
             <Typography variant="eyebrow" color="rgba(179,179,186,0.12)" style={{ fontSize: '40px' }}>{item.num}</Typography>
           </div>

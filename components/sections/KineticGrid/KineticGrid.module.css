@@ -97,15 +97,24 @@
   right: 0;
   padding: var(--space-xl) var(--space-md) var(--space-md);
   background: var(--card-meta-gradient);
-  /* Resting state: invisible and slightly offset — see inline style in Card */
   z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+
+  /* Resting state — hidden and offset. Defined here so hover can override
+     without needing !important. The transition is expressed via CSS variables
+     so values stay in sync with the token system. */
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity   var(--duration-standard) ease,
+    transform var(--duration-standard) ease;
 }
 
-/* Hover reveal — !important required to override inline resting-state styles */
-[data-reveal]:hover .cardMeta {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
+/* Hover reveal — only fires once the card has been scroll-revealed.
+   No !important needed: CSS module selector wins over no inline style. */
+[data-reveal="done"]:hover .cardMeta {
+  opacity: 1;
+  transform: translateY(0);
 }

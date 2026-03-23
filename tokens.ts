@@ -81,14 +81,6 @@ export const COLOR = {
   /** Ghost button resting, interactive resting */
   textGhost:     'rgba(242,242,252,0.60)',
 
-  // ── Alpha borders ────────────────────────────────────────────────────────────
-  /** Sweep button border at rest */
-  borderSweep:   'rgba(242,242,252,0.35)',
-  /** Toggle option border at rest */
-  borderToggle:  'rgba(255,255,255,0.18)',
-  /** Toggle option resting text */
-  textToggle:    'rgba(179,179,186,0.50)',
-
 } as const
 
 // ─── Typography ───────────────────────────────────────────────────────────────
@@ -154,13 +146,30 @@ export const SPACE = {
   xxxl: '48px',
 } as const
 
+/**
+ * SECTION_SPACE — vertical rhythm between page sections.
+ * Use for padding-top / padding-bottom on section wrappers.
+ * The component SPACE scale tops at 48px — these fill the gap above that.
+ */
+export const SECTION_SPACE = {
+  sm:  '64px',
+  md:  '96px',
+  lg:  '128px',
+  xl:  '160px',
+  xxl: '200px',
+} as const
+
 // ─── Motion ───────────────────────────────────────────────────────────────────
 
 export const EASING = {
+  /** General purpose — enter, state changes */
   standard:  'cubic-bezier(0.4, 0, 0.2, 1)',
+  /** Fast start, sharp deceleration — reveals, sweeps, hover enters */
   cinematic: 'cubic-bezier(0.76, 0, 0.24, 1)',
+  /** Bouncy — name lifts, playful accents */
   spring:    'cubic-bezier(0.22, 1, 0.36, 1)',
-  exit:      'cubic-bezier(0.76, 0, 0.24, 1)',
+  /** Accelerates out of frame — dismissals, exits, closes */
+  exit:      'cubic-bezier(0.4, 0, 1, 1)',
 } as const
 
 export const DURATION = {
@@ -185,4 +194,26 @@ export const BREAKPOINT = {
   mobile:  0,
   tablet:  768,
   desktop: 1024,
+  wide:    1440,
+} as const
+
+// ─── Z-Index ──────────────────────────────────────────────────────────────────
+
+export const Z_INDEX = {
+  content:  1,
+  raised:   10,
+  sticky:   50,
+  header:   100,
+  modal:    150,
+  lightbox: 200,
+  toast:    300,
+} as const
+
+// ─── Shadows ──────────────────────────────────────────────────────────────────
+
+export const SHADOW = {
+  sm: '0 1px 3px rgba(0,0,0,0.30)',
+  md: '0 4px 12px rgba(0,0,0,0.40)',
+  lg: '0 8px 32px rgba(0,0,0,0.50)',
+  xl: '0 16px 64px rgba(0,0,0,0.60)',
 } as const

@@ -78,10 +78,9 @@
   --color-text-muted-low:   rgba(179,179,186,0.45);
   --color-text-ghost:       rgba(242,242,252,0.60);
 
-  /* ── Alpha borders ────────────────────────────────────── */
-  --color-border-sweep:     rgba(242,242,252,0.35);
-  --color-border-toggle:    rgba(255,255,255,0.18);
-  --color-text-toggle:      rgba(179,179,186,0.50);
+  /* Note: --color-border-sweep, --color-border-toggle, --color-text-toggle
+     have been moved to scoped custom properties inside their respective
+     component CSS modules (PingaButton.module.css, PingaToggle.module.css). */
 
   /* ── Typography ──────────────────────────────────────── */
 
@@ -124,11 +123,18 @@
   --space-xxl:  32px;
   --space-xxxl: 48px;
 
+  /* ── Section spacing — vertical rhythm between page sections ── */
+  --section-space-sm:  64px;
+  --section-space-md:  96px;
+  --section-space-lg:  128px;
+  --section-space-xl:  160px;
+  --section-space-xxl: 200px;
+
   /* ── Motion ──────────────────────────────────────────── */
   --easing-standard:  cubic-bezier(0.4, 0, 0.2, 1);
   --easing-cinematic: cubic-bezier(0.76, 0, 0.24, 1);
   --easing-spring:    cubic-bezier(0.22, 1, 0.36, 1);
-  --easing-exit:      cubic-bezier(0.76, 0, 0.24, 1);
+  --easing-exit:      cubic-bezier(0.4, 0, 1, 1); /* accelerates out of frame */
 
   --duration-fast:     180ms;
   --duration-standard: 280ms;
@@ -145,4 +151,23 @@
   /* --bp-mobile:   0px    */
   /* --bp-tablet:   768px  */
   /* --bp-desktop:  1024px */
+  /* --bp-wide:     1440px */
+
+  /* ── Z-index scale ────────────────────────────────────── */
+  --z-content:  1;
+  --z-raised:   10;
+  --z-sticky:   50;
+  --z-header:   100;
+  --z-modal:    150;
+  --z-lightbox: 200;
+  --z-toast:    300;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.40);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.50);
+  --shadow-xl: 0 16px 64px rgba(0,0,0,0.60);
+
+  /* ── Focus ring ───────────────────────────────────────── */
+  --focus-ring: 0 0 0 2px rgba(242,242,252,0.60);
 }

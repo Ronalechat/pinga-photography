@@ -277,14 +277,14 @@ export default function ScrollHero({
             }}
           >
             <div className={styles.slideOverlay} />
-            <span className={styles.title}>{slide.label}</span>
-            <span className={styles.subtitle}>{slide.subtitle}</span>
+            <Typography variant="displaySlide" as="span" className={styles.title}>{slide.label}</Typography>
+            <Typography variant="eyebrow" as="span" className={styles.subtitle} color="rgba(255,255,255,0.45)">{slide.subtitle}</Typography>
             <Typography variant="label" as="span" className={styles.label}>{slide.label}</Typography>
           </div>
         ))}
 
         {/* ── Counter ── */}
-        <Typography variant="small" as="span" ref={numRef} className={styles.num}>
+        <Typography variant="meta" as="span" ref={numRef} className={styles.num}>
           01 / {String(count).padStart(2, '0')}
         </Typography>
 

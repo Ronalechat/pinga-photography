@@ -3,12 +3,65 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export async function POST(req: NextRequest) {
-  const { name, email, phone, occasions, date, message } = await req.json()
+// ─── Validation helpers ────────────────────────────────────────────────────────
 
-  if (!name || !email || !message) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_RE = /^[\d\s+\-().]*$/
+
+/** Strip HTML tags to prevent injection into the email template */
+function sanitize(s: unknown): string {
+  if (typeof s !== 'string') return ''
+  return s.replace(/<[^>]*>/g, '').trim()
+}
+
+function validateBody(body: Record<string, unknown>): string | null {
+  const name    = sanitize(body.name)
+  const email   = sanitize(body.email)
+  const message = sanitize(body.message)
+  const phone   = sanitize(body.phone)
+
+  if (!name)                         return 'Name is required'
+  if (name.length > 120)             return 'Name must be 120 characters or fewer'
+  if (!email)                        return 'Email is required'
+  if (!EMAIL_RE.test(email))         return 'Email address is invalid'
+  if (!message)                      return 'Message is required'
+  if (message.length > 5000)         return 'Message must be 5000 characters or fewer'
+  if (phone && !PHONE_RE.test(phone)) return 'Phone number contains invalid characters'
+  if (phone && phone.length > 30)    return 'Phone number must be 30 characters or fewer'
+
+  return null
+}
+
+// ─── Allowed occasions ────────────────────────────────────────────────────────
+
+const VALID_OCCASIONS = new Set(['Street', 'Engagement', 'Pregnancy', 'Birthday', 'Exhibition', 'Portrait'])
+
+function validateOccasions(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter((o): o is string => typeof o === 'string' && VALID_OCCASIONS.has(o))
+}
+
+// ─── Route handler ────────────────────────────────────────────────────────────
+
+export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
+
+  const validationError = validateBody(body)
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 })
+  }
+
+  const name      = sanitize(body.name)
+  const email     = sanitize(body.email)
+  const message   = sanitize(body.message)
+  const phone     = sanitize(body.phone)
+  const date      = sanitize(body.date)
+  const occasions = validateOccasions(body.occasions)
 
   const html = `
     <table style="font-family: Georgia, serif; font-size: 15px; color: #1a1a1a; max-width: 600px; width: 100%; border-collapse: collapse;">

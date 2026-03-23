@@ -3,8 +3,8 @@ import styles from './Typography.module.css'
 
 type Variant =
   | 'displayHero' | 'displayLarge' | 'displayMedium' | 'displayThin'
-  | 'headingMedium' | 'sentName'
-  | 'eyebrow' | 'body' | 'label' | 'small' | 'navLink'
+  | 'headingMedium' | 'displaySlide'
+  | 'eyebrow' | 'body' | 'bodyLarge' | 'caption' | 'label' | 'navLink'
   | 'meta'
 
 const DEFAULT_ELEMENT: Record<Variant, React.ElementType> = {
@@ -13,11 +13,12 @@ const DEFAULT_ELEMENT: Record<Variant, React.ElementType> = {
   displayMedium: 'h2',
   displayThin:   'h2',
   headingMedium: 'h2',
-  sentName:      'p',
+  displaySlide:  'span',
   eyebrow:       'span',
   body:          'p',
+  bodyLarge:     'p',
+  caption:       'span',
   label:         'span',
-  small:         'span',
   navLink:       'span',
   meta:          'span',
 }

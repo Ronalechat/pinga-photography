@@ -23,24 +23,26 @@ export const DisplayLarge: Story  = { args: { variant: 'displayLarge',  children
 export const DisplayMedium: Story = { args: { variant: 'displayMedium', children: 'displayMedium' } }
 export const DisplayThin: Story   = { args: { variant: 'displayThin',   children: 'displayThin'   } }
 export const HeadingMedium: Story = { args: { variant: 'headingMedium', children: 'headingMedium' } }
-export const SentName: Story      = { args: { variant: 'sentName',      children: 'sentName'      } }
+export const DisplaySlide: Story  = { args: { variant: 'displaySlide',  children: 'displaySlide'  } }
 export const Eyebrow: Story       = { args: { variant: 'eyebrow',       children: 'eyebrow'       } }
 export const Body: Story          = { args: { variant: 'body',          children: 'body'          } }
+export const BodyLarge: Story     = { args: { variant: 'bodyLarge',     children: 'bodyLarge'     } }
+export const Caption: Story       = { args: { variant: 'caption',       children: 'caption'       } }
 export const Label: Story         = { args: { variant: 'label',         children: 'label'         } }
-export const Small: Story         = { args: { variant: 'small',         children: 'small'         } }
 export const NavLink: Story       = { args: { variant: 'navLink',       children: 'navLink'       } }
+export const MetaVariant: Story   = { args: { variant: 'meta',          children: 'meta'          } }
 
 /**
  * **Color override** — `color` prop overrides the variant's default CSS color.
  *
  * Use when a one-off color is needed without defining a new variant.
- * Here `small` renders in the accent blue instead of its default muted-low.
+ * Here `eyebrow` renders with a dimmed white for a hero subtitle context.
  */
 export const ColorOverride: Story = {
   args: {
-    variant:  'small',
-    color:    '#3C3C91',
-    children: 'small · color override',
+    variant:  'eyebrow',
+    color:    'rgba(255,255,255,0.45)',
+    children: 'eyebrow · hero subtitle context',
   },
 }
 
@@ -50,12 +52,14 @@ const VARIANTS = [
   { variant: 'displayMedium', element: 'h2'   },
   { variant: 'displayThin',   element: 'h2'   },
   { variant: 'headingMedium', element: 'h2'   },
-  { variant: 'sentName',      element: 'p'    },
+  { variant: 'displaySlide',  element: 'span' },
   { variant: 'eyebrow',       element: 'span' },
   { variant: 'body',          element: 'p'    },
+  { variant: 'bodyLarge',     element: 'p'    },
+  { variant: 'caption',       element: 'span' },
   { variant: 'label',         element: 'span' },
-  { variant: 'small',         element: 'span' },
   { variant: 'navLink',       element: 'span' },
+  { variant: 'meta',          element: 'span' },
 ] as const
 
 export const AllVariants: Story = {

@@ -81,7 +81,13 @@
 /* ── Sweep ─────────────────────────────────────────────────────────────────── */
 
 .sweep {
-  border: 1px solid var(--color-border-sweep);
+  /*
+   * Component-scoped token — borderSweep only applies to this variant.
+   * Value moved here from the global token file to reduce global token surface area.
+   */
+  --sweep-border-resting: rgba(242,242,252,0.35);
+
+  border: 1px solid var(--sweep-border-resting);
   border-radius: 0; /* never rounded — enforced, do not override */
   padding: 10px 24px;
   overflow: hidden;

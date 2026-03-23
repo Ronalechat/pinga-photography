@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { COLOR, DURATION, EASING, RADIUS, SPACE } from '@tokens'
+import { COLOR, DURATION, EASING } from '@tokens'
 import PingaToggle from '@/components/ui/ToggleButton/PingaToggle'
 import Typography from '@/components/ui/Typography/Typography'
 import Lightbox from '@/components/ui/Lightbox/Lightbox'
@@ -103,15 +103,8 @@ function Card({ item, colIndex, color, onClick }: {
         </div>
       )}
 
-      {/* Hover meta bar — opacity/transform resting state set inline; hover state in CSS module */}
-      <div
-        className={styles.cardMeta}
-        style={{
-          opacity:    0,
-          transform:  'translateY(3px)',
-          transition: `opacity ${DURATION.standard} ease, transform ${DURATION.standard} ease`,
-        }}
-      >
+      {/* Hover meta bar — resting state and hover reveal both in KineticGrid.module.css */}
+      <div className={styles.cardMeta}>
         <Typography variant="meta" color={COLOR.textPrimary}>{item.cat}</Typography>
         <Typography variant="meta">{item.num}</Typography>
       </div>

@@ -35,8 +35,17 @@
 .option {
   composes: reset from '../_buttonReset.module.css';
 
+  /*
+   * Component-scoped tokens — values live here, not in the global token file.
+   * borderToggle and textToggle are only used by this component.
+   */
+  --toggle-border-resting: rgba(255,255,255,0.18);
+  --toggle-border-hover:   rgba(255,255,255,0.35);
+  --toggle-text-resting:   rgba(179,179,186,0.50);
+  --toggle-text-hover:     rgba(179,179,186,0.75);
+
   /* Border */
-  border: 1px solid var(--color-border-toggle);
+  border: 1px solid var(--toggle-border-resting);
   border-radius: 0; /* never rounded — enforced, do not override */
 
   /* Sizing */
@@ -58,12 +67,19 @@
   justify-content: center;
 
   /* Colour — resting state */
-  color: var(--color-text-toggle);
+  color: var(--toggle-text-resting);
 
   /* Colour transitions */
   transition:
     color        320ms var(--easing-cinematic),
     border-color 320ms var(--easing-cinematic);
+}
+
+/* ── Hover state — communicates interactivity before click ──────────────────── */
+
+.option:not(.selected):hover {
+  color: var(--toggle-text-hover);
+  border-color: var(--toggle-border-hover);
 }
 
 /* Fill layer — sweeps in from left when selected */

@@ -81,11 +81,18 @@
   --space-xxl:  32px;
   --space-xxxl: 48px;
 
+  /* ── Section spacing — vertical rhythm between page sections ── */
+  --section-space-sm:  64px;
+  --section-space-md:  96px;
+  --section-space-lg:  128px;
+  --section-space-xl:  160px;
+  --section-space-xxl: 200px;
+
   /* ── Motion ──────────────────────────────────────────── */
   --easing-standard:  cubic-bezier(0.4, 0, 0.2, 1);
   --easing-cinematic: cubic-bezier(0.76, 0, 0.24, 1);
   --easing-spring:    cubic-bezier(0.22, 1, 0.36, 1);
-  --easing-exit:      cubic-bezier(0.76, 0, 0.24, 1);
+  --easing-exit:      cubic-bezier(0.4, 0, 1, 1); /* accelerates out of frame */
 
   --duration-fast:     180ms;
   --duration-standard: 280ms;
@@ -97,6 +104,24 @@
   --radius-md:   3px;
   --radius-pill: 20px;
   --radius-full: 50%;
+
+  /* ── Z-index scale ────────────────────────────────────── */
+  --z-content:  1;
+  --z-raised:   10;
+  --z-sticky:   50;
+  --z-header:   100;
+  --z-modal:    150;
+  --z-lightbox: 200;
+  --z-toast:    300;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.40);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.50);
+  --shadow-xl: 0 16px 64px rgba(0,0,0,0.60);
+
+  /* ── Focus ring ───────────────────────────────────────── */
+  --focus-ring: 0 0 0 2px rgba(242,242,252,0.60);
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────── */
@@ -120,7 +145,17 @@ body {
 
 body {
   min-height: 100%;
-  background: var(--color-bg-primary);
+  background-color: var(--color-bg-primary);
+  /*
+   * Grain texture — SVG feTurbulence noise blended directly with the body
+   * background-color via background-blend-mode. This means the grain is a
+   * property of the background itself, not an overlay layer: images, cards,
+   * and all child elements sit naturally above it and are completely unaffected.
+   * No z-index games, no mix-blend-mode on a pseudo-element, no impact on photos.
+   */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  background-blend-mode: overlay;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -144,4 +179,9 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Grain is decorative — remove it when motion/visual effects are reduced */
+  body { background-image: none; }
 }
