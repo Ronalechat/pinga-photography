@@ -122,6 +122,20 @@
 
   /* ── Focus ring ───────────────────────────────────────── */
   --focus-ring: 0 0 0 2px rgba(242,242,252,0.60);
+
+  /*
+   * ── Grain noise — shared across body and all section containers ────────────
+   * Apply the full trio (image + size + blend-mode) anywhere a surface should
+   * carry the grain texture. Only used with background-color: var(--color-bg-primary).
+   * Lightbox is intentionally excluded (full-screen overlay, grain not needed).
+   *
+   * Usage in any CSS module:
+   *   background-color: var(--color-bg-primary);
+   *   background-image: var(--bg-noise);
+   *   background-size: 256px 256px;
+   *   background-blend-mode: overlay;
+   */
+  --bg-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────── */
@@ -153,7 +167,7 @@ body {
    * and all child elements sit naturally above it and are completely unaffected.
    * No z-index games, no mix-blend-mode on a pseudo-element, no impact on photos.
    */
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-image: var(--bg-noise);
   background-size: 256px 256px;
   background-blend-mode: overlay;
   color: var(--color-text-primary);

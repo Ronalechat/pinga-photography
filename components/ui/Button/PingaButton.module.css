@@ -114,10 +114,14 @@
   border-color: var(--color-text-primary);
 }
 
-/* Text sits above the fill, inverts as fill arrives */
+/* Text sits above the fill, inverts as fill arrives.
+   inline-flex + align-items centers any child (text, triangle, future icons)
+   against each other without relying on baseline alignment. */
 .sweepText {
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
   color: var(--color-text-primary);
   transition: color 380ms var(--easing-cinematic);
 }

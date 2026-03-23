@@ -30,7 +30,10 @@
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 
 .root {
-  background: var(--color-bg-primary);
+  background-color: var(--color-bg-primary);
+  background-image: var(--bg-noise);
+  background-size: 256px 256px;
+  background-blend-mode: overlay;
   padding: 72px 0 80px;
   display: grid;
   grid-template-columns: 1fr 1fr;
