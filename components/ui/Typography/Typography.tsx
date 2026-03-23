@@ -5,6 +5,7 @@ type Variant =
   | 'displayHero' | 'displayLarge' | 'displayMedium' | 'displayThin'
   | 'headingMedium' | 'sentName'
   | 'eyebrow' | 'body' | 'label' | 'small' | 'navLink'
+  | 'meta'
 
 const DEFAULT_ELEMENT: Record<Variant, React.ElementType> = {
   displayHero:   'h1',
@@ -18,6 +19,7 @@ const DEFAULT_ELEMENT: Record<Variant, React.ElementType> = {
   label:         'span',
   small:         'span',
   navLink:       'span',
+  meta:          'span',
 }
 
 export interface TypographyProps {

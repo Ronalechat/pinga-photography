@@ -1,6 +1,110 @@
-/* Hover state for card meta — requires a CSS rule because it
-   targets a child element on parent hover; cannot be done with
-   inline styles alone. */
+/*
+ * KineticGrid.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Styles for the masonry-style photo grid with category filters and scroll-reveal.
+ *
+ * ANIMATION NOTE
+ * Cards start invisible (opacity: 0, transform: translate offset) via inline style
+ * set in KineticGrid.tsx. The reveal animation is applied by checkReveals() using
+ * direct DOM manipulation — do not convert to React state.
+ *
+ * HOVER NOTE
+ * .cardMeta uses !important to override the inline resting-state opacity/transform.
+ * This is necessary because inline styles have the highest specificity and the hover
+ * target is the parent element, making a higher-specificity selector impossible.
+ */
+
+/* ── Shell ───────────────────────────────────────────────────────────────── */
+
+.shell {
+  position: relative;
+  background: var(--color-bg-primary);
+  /* Component-scoped custom properties — available to all descendants */
+  --grid-bottom-padding: 80px;
+  --card-meta-gradient: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+}
+
+.inner {
+  padding: var(--space-xxl) var(--space-lg) var(--grid-bottom-padding);
+}
+
+/* ── Header row ──────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.divider {
+  flex: 1;
+  height: 0.5px;
+  background: var(--color-border-divider);
+}
+
+/* ── Filter row ──────────────────────────────────────────────────────────── */
+
+.filters {
+  margin-bottom: var(--space-xl);
+}
+
+/* ── Grid ────────────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-sm);
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+
+.card {
+  width: 100%;
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  /* background set inline (dynamic per category color) */
+  /* opacity and transform set inline (reveal animation state) */
+}
+
+/* ── Card placeholder (removed once real images are wired in) ────────────── */
+
+.placeholderContent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* ── Card hover meta bar ─────────────────────────────────────────────────── */
+
+.cardMeta {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-xl) var(--space-md) var(--space-md);
+  background: var(--card-meta-gradient);
+  /* Resting state: invisible and slightly offset — see inline style in Card */
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+/* Hover reveal — !important required to override inline resting-state styles */
 [data-reveal]:hover .cardMeta {
   opacity: 1 !important;
   transform: translateY(0) !important;

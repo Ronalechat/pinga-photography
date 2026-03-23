@@ -1,3 +1,15 @@
+/*
+ * ScrollHero.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Scroll-driven hero. The outer div sets the scroll height; the stage is sticky.
+ *
+ * ANIMATION NOTE
+ * Slide opacity, progress bar transform, dot scale/colour, and hint opacity are
+ * all driven by direct DOM ref manipulation in ScrollHero.tsx — do not convert
+ * to React state. Layout measurements (outerTop, scrollable) are cached in a ref
+ * and invalidated by ResizeObserver; do not read getBoundingClientRect in the rAF loop.
+ */
+
 /* ── Stage — sticks to the top of the viewport while the outer div scrolls ── */
 /* Height cascade ensures the stage fills the viewport on all browsers,
    including iOS Safari where dvh recalculates as browser chrome shows/hides. */
@@ -11,34 +23,72 @@
   height: 100vh;  /* fallback */
   height: 100svh; /* iOS Safari 15+ */
   height: 100dvh; /* modern — recalculates as browser chrome shows/hides */
+
+  /* Component-scoped custom properties — available to all descendants */
+  --slide-overlay-gradient: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+  --progress-bar-height: 2px;
+  --dot-size: 5px;
+  --hint-bottom: 40px;
 }
 
-/* ── Slide label (bottom-left) ─────────────────────── */
+/* ── Slide — stacked full-bleed layers, crossfaded by scroll progress ────── */
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-md);
+  /* opacity, willChange, cursor, background-image set inline (scroll-driven / dynamic) */
+}
+
+.slideOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--slide-overlay-gradient);
+  pointer-events: none;
+}
+
+/* ── Slide label (bottom-left) ─────────────────────────────────────────────── */
 .label {
   position: absolute;
   left: 20px;
   bottom: 28px;
-  font-family: var(--font-serif);
-  font-size: 9px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
   z-index: 1;
 }
 
-/* ── Slide counter ─────────────────────────────────── */
+/* ── Slide counter ─────────────────────────────────────────────────────────── */
 .num {
   position: absolute;
   top: 20px;
   right: 20px;
-  font-family: var(--font-serif);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  color: rgba(255, 255, 255, 0.35);
   z-index: 10;
 }
 
-/* ── Nav dots — hidden mobile ──────────────────────── */
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+
+.progressTrack {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--progress-bar-height);
+  background: rgba(255, 255, 255, 0.12);
+  z-index: 10;
+}
+
+.progressBar {
+  height: 100%;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.75);
+  transform: scaleX(0);
+  transform-origin: left;
+  will-change: transform;
+}
+
+/* ── Nav dots — hidden mobile ──────────────────────────────────────────────── */
 .dots {
   display: none;
   position: absolute;
@@ -50,7 +100,28 @@
   z-index: 10;
 }
 
-/* ── Hint line ─────────────────────────────────────── */
+.dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  /* background and transform set inline (scroll-driven active state) */
+}
+
+/* ── Scroll hint ────────────────────────────────────────────────────────────── */
+
+.hint {
+  position: absolute;
+  bottom: var(--hint-bottom);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  /* opacity set inline (fades out as user scrolls) */
+}
+
 .hintLine {
   width: 1px;
   height: 32px;
@@ -58,18 +129,17 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
-/* ── Title ─────────────────────────────────────────── */
+/* ── Title / subtitle — centered on slide ──────────────────────────────────── */
 .title {
   position: relative;
   z-index: 1;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.95);
   letter-spacing: 0.06em;
   font-size: 28px;
 }
 
-/* ── Subtitle ──────────────────────────────────────── */
 .subtitle {
   position: relative;
   z-index: 1;
@@ -85,7 +155,7 @@
   50%       { opacity: 0.8; }
 }
 
-/* ── Reduced motion ──────────────────────────────────*/
+/* ── Reduced motion ────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .hintLine { animation: none; opacity: 0.5; }
 }
@@ -98,14 +168,12 @@
   .label {
     bottom: 44px;
     left: 36px;
-    font-size: 10px;
   }
 
   .num {
     top: auto;
     bottom: 44px;
     right: 36px;
-    font-size: 11px;
   }
 
   .dots { display: flex; }
@@ -121,7 +189,6 @@
   .label {
     bottom: 48px;
     left: 52px;
-    font-size: 11px;
   }
 
   .num {

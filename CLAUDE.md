@@ -59,6 +59,9 @@ No barrel index files. Explicit paths only.
 - Plain HTML files use CSS custom properties from `tokens.css` (e.g. `var(--color-bg-primary)`)
 - When updating a value, mirror the change in both files
 
+**When to add a token vs a scoped CSS custom property:**
+Add a value to `tokens.ts` only when it is used as a pattern across 3 or more unrelated places. One-off component-specific values (a unique offset, a single component's internal spacing) belong as CSS custom properties scoped inside that component's `.module.css` — not in the global token file.
+
 **Key palette:**
 
 - `bgPrimary` `#16161D` — page background
@@ -80,9 +83,9 @@ Scroll-driven and reveal animations bypass React state intentionally — they us
 
 ## Component Notes
 
-- **ScrollHero**: Injects a `<style>` block for responsive CSS. The outer div sets scroll height (`scrollMultiplier × 100vh`); the inner stage is `position: sticky`. Scroll listener is passive.
-- **KineticGrid**: Cards use `data-reveal="pending"` and `clip-path` animation for the scroll-reveal effect. Hover state for `.kg-card-meta` requires the injected `<style>` block (can't be done inline). The lightbox renders inside the scroll container, not a portal.
-- **ImageCarousel**: `ImageCarousel` imports directly from `./tokens`. `ScrollHero` does not (it predates the tokens file and hardcodes values).
+- **ScrollHero**: Layout measurements (outer element top offset, scrollable height) are cached in a ref and invalidated by ResizeObserver — do not read `getBoundingClientRect` inside the rAF loop. The outer div sets scroll height (`scrollMultiplier × 100vh`); the inner stage is `position: sticky`. Scroll listeners are passive.
+- **KineticGrid**: Cards use `data-reveal="pending"` and animate via `opacity + transform` (not clip-path). Reveal fires only after the card's `<img>` has loaded (`img.complete`). Hover state for `.cardMeta` is in `KineticGrid.module.css` using `!important` — required to override the inline resting state. The lightbox renders via `createPortal` to `document.body` so it sits above the header's stacking context.
+- **Lightbox**: Lives at `components/ui/Lightbox/`. Reusable outside of KineticGrid. Receives `list`, `index`, `colors`, `onClose`, `onNavigate`, `onJump` props.
 
 ## UI Component System
 
@@ -126,14 +129,17 @@ Full documentation: `/docs/ui-components.md`
 
 ## Typography Rules
 
-- All text in new components must use a Typography variant.
+- **All text in all components must use a Typography variant** — new and existing.
 - Never hardcode font-family, font-size, letter-spacing, text-transform, or
-  color on a text element.
+  color on a text element anywhere in the codebase.
 - If no existing variant fits, propose a new named variant rather than
-  hardcoding values inline.
+  hardcoding values inline. Add it to `Typography.module.css` and the `Variant`
+  type in `Typography.tsx`.
 - Display variants (displayHero → sentName) use Jean-Luc (var(--font-sans)).
   All other variants use Georgia (var(--font-serif)).
 - Do not use system-ui, Arial, Inter, or any font not in the token system.
+- The `color` prop on `<Typography>` overrides the variant's default colour —
+  use it when a specific element needs a different colour than the variant default.
 
 ## Routes
 

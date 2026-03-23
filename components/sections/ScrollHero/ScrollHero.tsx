@@ -2,16 +2,9 @@
 
 import { useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { FONT } from '@tokens'
+import { COLOR } from '@tokens'
+import Typography from '@/components/ui/Typography/Typography'
 import styles from './ScrollHero.module.css'
-
-// ─── Breakpoints ──────────────────────────────────────────────────────────────
-
-export const BREAKPOINTS = {
-  mobile:  0,    // 0–767px
-  tablet:  768,  // 768–1023px
-  desktop: 1024, // 1024px+
-} as const
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +33,7 @@ export interface ScrollHeroProps {
   transitionZone?: number
   /**
    * Total scroll height expressed as a multiple of viewport height.
-   * Auto-calculated from slide count if omitted (~1.8vh per slide + 1vh buffer).
+   * Auto-calculated from slide count if omitted (~0.9vh per slide + 1vh buffer).
    */
   scrollMultiplier?: number
 }
@@ -64,8 +57,9 @@ function easeInOut(t: number): number {
  * through the component, then crossfades between slides.
  *
  * Architecture: tall outer div (scrollMultiplier × 100vh) in the normal
- * document flow + position:sticky inner stage. Scroll progress is derived from
- * getBoundingClientRect() inside a requestAnimationFrame loop.
+ * document flow + position:sticky inner stage. Scroll progress is read from
+ * window.scrollY against a cached outerTop offset (no getBoundingClientRect
+ * in the hot path).
  *
  * Scroll detection strategy (hybrid):
  *   1. IntersectionObserver tracks visibility — the rAF loop is suppressed
@@ -100,18 +94,18 @@ export default function ScrollHero({
   //   3 slides → 3.7, 5 slides → 5.5, 8 slides → 8.2
   // transitionZone: fewer slides = longer crossfade, more = snappier
   //   3 slides → 0.32, 5 slides → 0.25, 8 slides → 0.21
-  const resolvedMultiplier  = scrollMultiplier ?? count * 0.9 + 1
-  const resolvedTransition  = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
+  const resolvedMultiplier = scrollMultiplier ?? count * 0.9 + 1
+  const resolvedTransition = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
 
-  const outerRef       = useRef<HTMLDivElement>(null)
-  const slideRefs      = useRef<(HTMLDivElement | null)[]>([])
-  const dotRefs        = useRef<(HTMLDivElement | null)[]>([])
-  const barRef         = useRef<HTMLDivElement>(null)
-  const hintRef        = useRef<HTMLDivElement>(null)
-  const numRef         = useRef<HTMLSpanElement>(null)
+  const outerRef    = useRef<HTMLDivElement>(null)
+  const slideRefs   = useRef<(HTMLDivElement | null)[]>([])
+  const dotRefs     = useRef<(HTMLDivElement | null)[]>([])
+  const barRef      = useRef<HTMLDivElement>(null)
+  const hintRef     = useRef<HTMLDivElement>(null)
+  const numRef      = useRef<HTMLSpanElement>(null)
   // Cached layout measurements — only valid after mount, invalidated on resize.
   // Reading these in the rAF loop avoids forced reflow from getBoundingClientRect/offsetHeight.
-  const layoutCache    = useRef<{ outerTop: number; scrollable: number } | null>(null)
+  const layoutCache = useRef<{ outerTop: number; scrollable: number } | null>(null)
 
   const update = useCallback(() => {
     const outer = outerRef.current
@@ -129,24 +123,22 @@ export default function ScrollHero({
     const inT    = frac > tStart && cur < count - 1
     const t      = inT ? easeInOut((frac - tStart) / resolvedTransition) : 0
 
-    // Slide opacities
-    slideRefs.current.forEach((slide, i) => {                                                                                                                                        
-    if (!slide) return                                                                                                                                                             
-    let op = 0                                                                                                                                                                     
-    if (i === cur)             op = inT ? 1 - t : 1                                                                                                                                
-    else if (i === nxt && inT) op = t                                                                                                                                              
-    slide.style.opacity = String(op)                                                                                                                                               
-    slide.style.pointerEvents = op > 0 ? 'auto' : 'none'                                                                                                                           
-  })       
+    // Slide opacities + pointer events (only the visible slide receives clicks)
+    slideRefs.current.forEach((slide, i) => {
+      if (!slide) return
+      let op = 0
+      if (i === cur)             op = inT ? 1 - t : 1
+      else if (i === nxt && inT) op = t
+      slide.style.opacity       = String(op)
+      slide.style.pointerEvents = op > 0 ? 'auto' : 'none'
+    })
 
-    // Nav dots
+    // Nav dots — active dot is larger and brighter
     const active = inT && t > 0.5 ? nxt : cur
     dotRefs.current.forEach((dot, i) => {
       if (!dot) return
-      dot.style.background = i === active
-        ? 'rgba(255,255,255,0.9)'
-        : 'rgba(255,255,255,0.22)'
-      dot.style.transform = i === active ? 'scale(1.5)' : 'scale(1)'
+      dot.style.background = i === active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)'
+      dot.style.transform  = i === active ? 'scale(1.5)' : 'scale(1)'
     })
 
     if (barRef.current)
@@ -156,8 +148,7 @@ export default function ScrollHero({
       hintRef.current.style.opacity = String(clamp(1 - norm * 6, 0, 1))
 
     if (numRef.current)
-      numRef.current.textContent =
-        `${String(active + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`
+      numRef.current.textContent = `${String(active + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`
 
   }, [count, resolvedTransition])
 
@@ -272,56 +263,34 @@ export default function ScrollHero({
           <div
             key={slide.label}
             ref={el => { slideRefs.current[i] = el }}
+            className={styles.slide}
             aria-label={slide.alt ?? slide.label}
             onClick={slide.href ? () => router.push(slide.href!) : undefined}
             style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: 12,
-              opacity: 0,
+              opacity:    0,
               willChange: 'opacity',
-              cursor: slide.href ? 'pointer' : undefined,
+              cursor:     slide.href ? 'pointer' : undefined,
               ...(slide.src
                 ? { backgroundImage: `url('${slide.src}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                : { background: slide.background ?? '#16161D' }
+                : { background: slide.background ?? COLOR.bgPrimary }
               ),
             }}
           >
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.6) 100%)',
-              pointerEvents: 'none',
-            }} />
-
+            <div className={styles.slideOverlay} />
             <span className={styles.title}>{slide.label}</span>
             <span className={styles.subtitle}>{slide.subtitle}</span>
-            <span className={styles.label}>{slide.label}</span>
+            <Typography variant="label" as="span" className={styles.label}>{slide.label}</Typography>
           </div>
         ))}
 
         {/* ── Counter ── */}
-        <span ref={numRef} className={styles.num}>
+        <Typography variant="small" as="span" ref={numRef} className={styles.num}>
           01 / {String(count).padStart(2, '0')}
-        </span>
+        </Typography>
 
         {/* ── Progress bar ── */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          height: 2, background: 'rgba(255,255,255,0.12)', zIndex: 10,
-        }}>
-          <div ref={barRef} style={{
-            height: '100%',
-            background: 'rgba(255,255,255,0.75)',
-            width: '100%',
-            transform: 'scaleX(0)',
-            transformOrigin: 'left',
-            willChange: 'transform',
-          }} />
+        <div className={styles.progressTrack}>
+          <div ref={barRef} className={styles.progressBar} />
         </div>
 
         {/* ── Nav dots (tablet+ via CSS) ── */}
@@ -330,40 +299,20 @@ export default function ScrollHero({
             <div
               key={slide.label}
               ref={el => { dotRefs.current[i] = el }}
+              className={styles.dot}
               style={{
-                width: 5, height: 5,
-                borderRadius: '50%',
-                transition: 'background 0.3s ease, transform 0.3s ease',
                 background: i === 0 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)',
                 transform:  i === 0 ? 'scale(1.5)' : 'scale(1)',
+                transition: 'background 0.3s ease, transform 0.3s ease',
               }}
             />
           ))}
         </div>
 
         {/* ── Scroll hint ── */}
-        <div ref={hintRef} style={{
-          position: 'absolute',
-          bottom: 40,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 6,
-          zIndex: 10,
-          transition: 'opacity 0.4s ease',
-        }}>
+        <div ref={hintRef} className={styles.hint} style={{ transition: 'opacity 0.4s ease' }}>
           <div className={styles.hintLine} />
-          <span style={{
-            fontFamily: FONT.serif,
-            fontSize: 8,
-            letterSpacing: '0.22em',
-            color: 'rgba(255,255,255,0.4)',
-            textTransform: 'uppercase',
-          }}>
-            Scroll
-          </span>
+          <Typography variant="meta" color="rgba(255,255,255,0.4)">Scroll</Typography>
         </div>
 
       </div>

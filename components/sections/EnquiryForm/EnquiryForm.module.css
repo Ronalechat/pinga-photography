@@ -180,9 +180,11 @@
   margin: 0;
 }
 
-/* Input border turns red when field has an error */
-.inputError {
-  border-color: var(--color-error) !important;
+/* Input border turns red when field has an error.
+   Compound selector beats .input:focus specificity without needing !important. */
+.input.inputError,
+.textarea.inputError {
+  border-color: var(--color-error);
 }
 
 /* ── Submit row ───────────────────────────────────────────────────────────── */

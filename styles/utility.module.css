@@ -1,0 +1,30 @@
+/*
+ * utility.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Shared, single-purpose CSS classes used across multiple components.
+ * Only add a class here when the exact same rule is needed in 3+ places.
+ */
+
+/* Fills a container — used for img elements that must cover their parent */
+.imgCover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Fits within a container without cropping — used in lightbox image stage */
+.imgContain {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Standard block-level image reset — used in card/grid img elements */
+.imgBlock {
+  width: 100%;
+  height: auto;
+  display: block;
+}
