@@ -85,6 +85,11 @@
   50%       { opacity: 0.8; }
 }
 
+/* ── Reduced motion ──────────────────────────────────*/
+@media (prefers-reduced-motion: reduce) {
+  .hintLine { animation: none; opacity: 0.5; }
+}
+
 /* ── Tablet: 768px+ ──────────────────────────────────*/
 @media (min-width: 768px) {
   .title    { font-size: 32px; }

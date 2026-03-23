@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getStoryblokApi, getVersion } from '@/lib/storyblok'
+import { getStoryblokApi, getVersion } from '@/utils/storyblok'
 import { StoryblokServerStory, StoryblokLiveEditing } from '@storyblok/react/rsc'
 
 export const revalidate = 60

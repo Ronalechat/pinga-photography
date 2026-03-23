@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { COLOR, FONT, FONT_SIZE, LETTER_SPACING, SPACE, EASING, DURATION, RADIUS } from '@tokens'
 import PingaToggle from '@/components/ui/ToggleButton/PingaToggle'
 import styles from './KineticGrid.module.css'
@@ -108,9 +109,11 @@ function Card({ item, colIndex, color, onClick }: {
         overflow: 'hidden',
         cursor: 'pointer',
         background: color,
-        clipPath: DIRS[colIndex] === 'left'  ? 'inset(0 100% 0 0)'
-                : DIRS[colIndex] === 'top'   ? 'inset(100% 0 0 0)'
-                                             : 'inset(0 0 0 100%)',
+        opacity: 0,
+        transform: DIRS[colIndex] === 'left'  ? 'translateX(-14px)'
+                 : DIRS[colIndex] === 'top'   ? 'translateY(-14px)'
+                                              : 'translateX(14px)',
+        willChange: 'opacity, transform',
       }}
     >
       {/* Real image or aspect ratio sizer */}
@@ -234,7 +237,7 @@ function Lightbox({ list, index, colors, onClose, onNavigate, onJump }: {
       {/* Nav buttons */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `${SPACE.md} ${SPACE.md}`, flexShrink: 0 }}>
         {(['prev', 'next'] as const).map(dir => (
-          <button key={dir}
+          <button key={dir+'dir'}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(dir) }}
             style={{ width: 40, height: 40, borderRadius: RADIUS.full, background: COLOR.bgInput, border: `0.5px solid ${COLOR.borderInput}`, color: COLOR.textMuted, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
           >{dir === 'prev' ? '←' : '→'}</button>
@@ -244,7 +247,7 @@ function Lightbox({ list, index, colors, onClose, onNavigate, onJump }: {
       {/* Thumbnail strip */}
       <div ref={thumbsRef} style={{ display: 'flex', gap: SPACE.xs, padding: `${SPACE.xs} ${SPACE.lg} ${SPACE.lg}`, overflowX: 'auto', flexShrink: 0, scrollbarWidth: 'none' }}>
         {list.map((t, i) => (
-          <div key={t.num}
+          <div key={t.num+t.cat}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJump(i) }}
             style={{ ...getThumbStyles(i === index, thumbWidth(t.ratio)), background: colors[t.cat] ?? COLOR.bgSurface, overflow: 'hidden', position: 'relative' }}
           >
@@ -280,17 +283,52 @@ export default function KineticGrid({
 
   const activeList = activeFilter === 'all' ? allItems : (categories[activeFilter] ?? [])
 
-  // Scroll-based reveal — uses getBoundingClientRect so it works in any scroll context
+  // Scroll-based reveal — uses getBoundingClientRect so it works in any scroll context.
+  // Transition uses opacity + transform (compositor-only) rather than clip-path (repaint per frame).
+  //
+  // Image-load guard: if the card contains an <img> that hasn't finished downloading,
+  // the reveal is deferred until the image settles (load or error). This ensures the
+  // animation always reveals a photo, never a placeholder-coloured box.
+  // A 3-second timeout fires the reveal unconditionally so a card is never stuck
+  // invisible on a very slow or failing connection.
   const checkReveals = useCallback(() => {
     const shell = shellRef.current
     if (!shell) return
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const doReveal = (card: HTMLElement) => {
+      const col = parseInt(card.dataset.col ?? '0')
+      if (reducedMotion) {
+        card.style.opacity    = '1'
+        card.style.transform  = 'translate(0, 0)'
+        card.style.willChange = 'auto'
+      } else {
+        const delay = `${STAGGER[col] ?? 0}ms`
+        card.style.transition = `opacity ${DURATION.reveal} ${EASING.cinematic} ${delay}, transform ${DURATION.reveal} ${EASING.cinematic} ${delay}`
+        card.style.opacity    = '1'
+        card.style.transform  = 'translate(0, 0)'
+        card.addEventListener('transitionend', () => { card.style.willChange = 'auto' }, { once: true })
+      }
+      card.dataset.reveal = 'done'
+    }
+
     shell.querySelectorAll<HTMLElement>('[data-reveal="pending"]').forEach(card => {
       const rect = card.getBoundingClientRect()
-      if (rect.bottom > 0 && rect.top < window.innerHeight - 40) {
-        const col = parseInt(card.dataset.col ?? '0')
-        card.style.clipPath   = 'inset(0 0 0 0)'
-        card.style.transition = `clip-path ${DURATION.reveal} ${EASING.cinematic} ${STAGGER[col] ?? 0}ms`
-        card.dataset.reveal   = 'done'
+      if (!(rect.bottom > 0 && rect.top < window.innerHeight - 40)) return
+
+      const img = card.querySelector('img')
+
+      if (!img || img.complete) {
+        // No image (placeholder card) or image already settled — reveal immediately
+        doReveal(card)
+      } else {
+        // Image still downloading — park the card so scroll events skip it,
+        // then reveal the moment it settles or after 3 seconds, whichever comes first
+        card.dataset.reveal = 'waiting'
+        const fallback = setTimeout(() => { if (card.dataset.reveal === 'waiting') doReveal(card) }, 3000)
+        const onSettled = () => { clearTimeout(fallback); doReveal(card) }
+        img.addEventListener('load',  onSettled, { once: true })
+        img.addEventListener('error', onSettled, { once: true })
       }
     })
   }, [])
@@ -300,8 +338,18 @@ export default function KineticGrid({
     if (!shell) return
     shell.scrollIntoView({ behavior: 'instant' })
     requestAnimationFrame(checkReveals)
-    window.addEventListener('scroll', checkReveals, { passive: true })
-    return () => window.removeEventListener('scroll', checkReveals)
+
+    // Gate the scroll listener with rAF — collapses N scroll events per frame
+    // into a single checkReveals call, matching the ScrollHero pattern.
+    let rafPending = false
+    const onScroll = () => {
+      if (rafPending) return
+      rafPending = true
+      requestAnimationFrame(() => { checkReveals(); rafPending = false })
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [activeFilter, checkReveals])
 
   useEffect(() => {
@@ -351,10 +399,10 @@ export default function KineticGrid({
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: SPACE.xl, fontFamily: FONT.serif, fontSize: '9px', letterSpacing: LETTER_SPACING.widest, textTransform: 'uppercase', color: COLOR.textMuted, opacity: 0.25 }}>↓ scroll to reveal more</p>
+        {/* <p style={{ textAlign: 'center', marginTop: SPACE.xl, fontFamily: FONT.serif, fontSize: '9px', letterSpacing: LETTER_SPACING.widest, textTransform: 'uppercase', color: COLOR.textMuted, opacity: 0.25 }}>↓ scroll to reveal more</p> */}
       </div>
 
-      {lightbox && (
+      {lightbox && createPortal(
         <Lightbox
           list={lightbox.list}
           index={lightbox.index}
@@ -366,7 +414,8 @@ export default function KineticGrid({
             setLightbox({ ...lightbox, index: next })
           }}
           onJump={i => setLightbox({ ...lightbox, index: i })}
-        />
+        />,
+        document.body,
       )}
     </div>
   )

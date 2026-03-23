@@ -103,21 +103,23 @@ export default function ScrollHero({
   const resolvedMultiplier  = scrollMultiplier ?? count * 0.9 + 1
   const resolvedTransition  = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
 
-  const outerRef  = useRef<HTMLDivElement>(null)
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([])
-  const dotRefs   = useRef<(HTMLDivElement | null)[]>([])
-  const barRef    = useRef<HTMLDivElement>(null)
-  const hintRef   = useRef<HTMLDivElement>(null)
-  const numRef    = useRef<HTMLSpanElement>(null)
+  const outerRef       = useRef<HTMLDivElement>(null)
+  const slideRefs      = useRef<(HTMLDivElement | null)[]>([])
+  const dotRefs        = useRef<(HTMLDivElement | null)[]>([])
+  const barRef         = useRef<HTMLDivElement>(null)
+  const hintRef        = useRef<HTMLDivElement>(null)
+  const numRef         = useRef<HTMLSpanElement>(null)
+  // Cached layout measurements — only valid after mount, invalidated on resize.
+  // Reading these in the rAF loop avoids forced reflow from getBoundingClientRect/offsetHeight.
+  const layoutCache    = useRef<{ outerTop: number; scrollable: number } | null>(null)
 
   const update = useCallback(() => {
     const outer = outerRef.current
-    if (!outer) return
+    const cache = layoutCache.current
+    if (!outer || !cache) return
 
-    const rect       = outer.getBoundingClientRect()
-    const scrolled   = -rect.top
-    const scrollable = outer.offsetHeight - window.innerHeight
-    const norm       = scrollable > 0 ? clamp(scrolled / scrollable, 0, 1) : 0
+    const scrolled = window.scrollY - cache.outerTop
+    const norm     = cache.scrollable > 0 ? clamp(scrolled / cache.scrollable, 0, 1) : 0
 
     const raw    = norm * (count - 1 + resolvedTransition * 2)
     const cur    = clamp(Math.floor(raw), 0, count - 1)
@@ -128,13 +130,14 @@ export default function ScrollHero({
     const t      = inT ? easeInOut((frac - tStart) / resolvedTransition) : 0
 
     // Slide opacities
-    slideRefs.current.forEach((slide, i) => {
-      if (!slide) return
-      let op = 0
-      if (i === cur)             op = inT ? 1 - t : 1
-      else if (i === nxt && inT) op = t
-      slide.style.opacity = String(op)
-    })
+    slideRefs.current.forEach((slide, i) => {                                                                                                                                        
+    if (!slide) return                                                                                                                                                             
+    let op = 0                                                                                                                                                                     
+    if (i === cur)             op = inT ? 1 - t : 1                                                                                                                                
+    else if (i === nxt && inT) op = t                                                                                                                                              
+    slide.style.opacity = String(op)                                                                                                                                               
+    slide.style.pointerEvents = op > 0 ? 'auto' : 'none'                                                                                                                           
+  })       
 
     // Nav dots
     const active = inT && t > 0.5 ? nxt : cur
@@ -147,7 +150,7 @@ export default function ScrollHero({
     })
 
     if (barRef.current)
-      barRef.current.style.width = `${Math.round(norm * 100)}%`
+      barRef.current.style.transform = `scaleX(${norm})`
 
     if (hintRef.current)
       hintRef.current.style.opacity = String(clamp(1 - norm * 6, 0, 1))
@@ -163,6 +166,29 @@ export default function ScrollHero({
 
     const outer = outerRef.current
     if (!outer) return
+
+    // Respect the OS-level "Reduce Motion" preference — skip the rAF loop
+    // entirely and show only the first slide statically.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    // ── Layout cache — populate once, invalidate on resize ───────────────
+    //
+    // Reading getBoundingClientRect / offsetHeight inside the rAF loop forces
+    // a synchronous layout flush before every style write (layout thrashing).
+    // Instead we cache the two values that only change when the DOM or viewport
+    // is resized, and in the hot path we only read window.scrollY — a simple
+    // property with no layout cost.
+    const measureLayout = () => {
+      layoutCache.current = {
+        outerTop:   outer.getBoundingClientRect().top + window.scrollY,
+        scrollable: outer.offsetHeight - window.innerHeight,
+      }
+    }
+    measureLayout()
+
+    const ro = new ResizeObserver(measureLayout)
+    ro.observe(outer)
+    window.addEventListener('resize', measureLayout)
 
     // ── Scroll-gated rAF loop with idle timeout ─────────────────────────
     //
@@ -228,6 +254,8 @@ export default function ScrollHero({
       stop()
       if (idleTimer) clearTimeout(idleTimer)
       observer?.disconnect()
+      ro.disconnect()
+      window.removeEventListener('resize', measureLayout)
       window.removeEventListener('scroll', onScroll)
       document.removeEventListener('scroll', onScroll)
       document.body?.removeEventListener('scroll', onScroll)
@@ -255,6 +283,7 @@ export default function ScrollHero({
               flexDirection: 'column',
               gap: 12,
               opacity: 0,
+              willChange: 'opacity',
               cursor: slide.href ? 'pointer' : undefined,
               ...(slide.src
                 ? { backgroundImage: `url('${slide.src}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -288,7 +317,10 @@ export default function ScrollHero({
           <div ref={barRef} style={{
             height: '100%',
             background: 'rgba(255,255,255,0.75)',
-            width: '0%',
+            width: '100%',
+            transform: 'scaleX(0)',
+            transformOrigin: 'left',
+            willChange: 'transform',
           }} />
         </div>
 

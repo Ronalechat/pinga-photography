@@ -1,6 +1,7 @@
 import { storyblokEditable } from '@storyblok/react/rsc'
 import type { SbBlokData } from '@storyblok/react/rsc'
 import ScrollHero from '@/components/sections/ScrollHero/ScrollHero'
+import { toSlug } from '@/utils/toSlug'
 
 interface SbAsset {
   filename: string
@@ -17,10 +18,6 @@ interface ScrollHeroSlideBlok extends SbBlokData {
 
 interface ScrollHeroBlokShape extends SbBlokData {
   slides: ScrollHeroSlideBlok[]
-}
-
-function toSlug(label: string): string {
-  return label.toLowerCase().replace(/\s+/g, '-')
 }
 
 export default function ScrollHeroBlok({ blok }: { blok: ScrollHeroBlokShape }) {

@@ -9,7 +9,7 @@
  *
  * The usePathname hook from next/navigation needs mocking in Storybook.
  * Add to .storybook/preview.ts:
- *   import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime'
+ *   import { RouterContext } from 'next/dist/shared/utils/router-context.shared-runtime'
  * Or use the nextjs-storybook-addon which handles this automatically.
  */
 

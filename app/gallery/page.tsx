@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getStoryblokApi, getVersion } from '@/lib/storyblok'
+import { getStoryblokApi, getVersion } from '@/utils/storyblok'
 import { StoryblokLiveEditing } from '@storyblok/react/rsc'
 import Container from '@/components/layout/Container/Container'
 import PageHeader from '@/components/sections/PageHeader/PageHeader'

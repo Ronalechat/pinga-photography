@@ -1,6 +1,6 @@
 'use client'
 import { storyblokInit, apiPlugin } from '@storyblok/react'
-import { components } from '@/lib/components'
+import { components } from '@/utils/components'
 
 storyblokInit({
   accessToken: process.env.NEXT_PUBLIC_STORYBLOK_ACCESS_TOKEN,

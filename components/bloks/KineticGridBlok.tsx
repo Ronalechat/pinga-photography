@@ -1,6 +1,7 @@
 import { storyblokEditable } from '@storyblok/react/rsc'
 import type { SbBlokData } from '@storyblok/react/rsc'
 import KineticGrid, { type PhotoConfig } from '@/components/sections/KineticGrid/KineticGrid'
+import { toSlug } from '@/utils/toSlug'
 
 interface SbAsset {
   filename: string
@@ -44,13 +45,17 @@ export default function KineticGridBlok({
     })
   }
 
+  const resolvedDefault = defaultCategory
+    ? Object.keys(categories).find((k) => toSlug(k) === defaultCategory)
+    : undefined
+
   return (
     <section {...storyblokEditable(blok)} className="clip-x">
       <KineticGrid
         categories={categories}
         allPreviewCount={blok.all_preview_count || undefined}
         eyebrow={blok.eyebrow || undefined}
-        defaultCategory={defaultCategory}
+        defaultCategory={resolvedDefault}
       />
     </section>
   )
