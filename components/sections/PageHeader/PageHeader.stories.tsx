@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import PageHeader from './PageHeader'
 
 const meta = {
-  title: 'Pinga / Sections / PageHeader',
+  title: 'P!nga / Sections / PageHeader',
   component: PageHeader,
   tags: ['autodocs'],
   decorators: [

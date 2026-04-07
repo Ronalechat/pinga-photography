@@ -111,6 +111,16 @@
   z-index: 1;
 }
 
+/* ── Primary variant — higher contrast resting state ────────────────────── */
+/*    Used in both KineticGrid and EnquiryForm as the canonical style.       */
+
+.primary .option {
+  --toggle-border-resting: rgba(255,255,255,0.32);
+  --toggle-border-hover:   rgba(255,255,255,0.55);
+  --toggle-text-resting:   rgba(179,179,186,0.80);
+  --toggle-text-hover:     rgba(242,242,252,0.95);
+}
+
 /* ── Reduced motion ──────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

@@ -89,6 +89,8 @@ function Card({ item, colIndex, color, onClick }: {
           src={item.src}
           alt={`${item.cat} ${item.num}`}
           className={utilStyles.imgBlock}
+          onContextMenu={(e) => e.preventDefault()}
+          draggable={false}
         />
       ) : (
         <div style={{ paddingTop: ratioPct(item.ratio) }} />
@@ -106,7 +108,6 @@ function Card({ item, colIndex, color, onClick }: {
       {/* Hover meta bar — resting state and hover reveal both in KineticGrid.module.css */}
       <div className={styles.cardMeta}>
         <Typography variant="meta" color={COLOR.textPrimary}>{item.cat}</Typography>
-        <Typography variant="meta">{item.num}</Typography>
       </div>
     </div>
   )
@@ -207,8 +208,27 @@ export default function KineticGrid({
     return () => { document.body.style.overflow = '' }
   }, [lightbox])
 
-  const cols: PhotoConfig[][] = [[], [], []]
-  activeList.forEach((item, i) => cols[i % 3].push(item))
+  const [colCount, setColCount] = useState(3)
+
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 767px)')
+    const tablet = window.matchMedia('(max-width: 1023px)')
+    const update = () => {
+      if (mobile.matches)        setColCount(1)
+      else if (tablet.matches)   setColCount(2)
+      else                       setColCount(3)
+    }
+    update()
+    mobile.addEventListener('change', update)
+    tablet.addEventListener('change', update)
+    return () => {
+      mobile.removeEventListener('change', update)
+      tablet.removeEventListener('change', update)
+    }
+  }, [])
+
+  const cols: PhotoConfig[][] = Array.from({ length: colCount }, () => [])
+  activeList.forEach((item, i) => cols[i % colCount].push(item))
 
   return (
     <div ref={shellRef} className={styles.shell}>
@@ -229,20 +249,24 @@ export default function KineticGrid({
             options={['all', ...catNames]}
             selected={activeFilter}
             onChange={(v) => setActiveFilter(v as string)}
+            variant="primary"
           />
         </div>
 
         {/* Grid */}
-        <div className={styles.grid}>
+        <div
+          className={styles.grid}
+          style={{ '--grid-cols': colCount } as React.CSSProperties}
+        >
           {cols.map((col, colIdx) => (
             <div key={colIdx} className={styles.column}>
               {col.map((item, rowIdx) => (
                 <Card
                   key={`${item.cat}-${item.num}`}
                   item={item}
-                  colIndex={colIdx}
+                  colIndex={colIdx % 3}
                   color={categoryColors[item.cat] ?? COLOR.bgSurface}
-                  onClick={() => setLightbox({ list: activeList, index: rowIdx * 3 + colIdx })}
+                  onClick={() => setLightbox({ list: activeList, index: rowIdx * colCount + colIdx })}
                 />
               ))}
             </div>

@@ -78,6 +78,8 @@ function CarouselViewer({
               src={slide.src}
               alt={slide.alt ?? ''}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              onContextMenu={(e) => e.preventDefault()}
+              draggable={false}
             />
           ) : (
             // Placeholder — remove once real images are in

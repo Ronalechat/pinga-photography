@@ -5,7 +5,7 @@ import EnquiryForm from './EnquiryForm'
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
 const meta = {
-  title: 'Pinga / Sections / EnquiryForm',
+  title: 'P!nga / Sections / EnquiryForm',
   component: EnquiryForm,
   tags: ['autodocs'],
   decorators: [

@@ -4,7 +4,7 @@ import PingaButton from './PingaButton'
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
 const meta = {
-  title: 'Pinga / UI / PingaButton',
+  title: 'P!nga / UI / PingaButton',
   component: PingaButton,
   tags: ['autodocs'],
   decorators: [

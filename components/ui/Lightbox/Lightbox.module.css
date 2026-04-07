@@ -109,3 +109,30 @@
   position: relative;
   /* width and border set inline (dynamic per aspect ratio + active state) */
 }
+
+/* ── Landscape on mobile / tablet — maximise image area ─────────────────── */
+
+@media (max-width: 1023px) and (orientation: landscape) {
+  .topBar {
+    padding: 6px var(--space-lg);
+  }
+
+  .navBar {
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  .thumbStrip {
+    padding: var(--space-xs) var(--space-lg);
+  }
+
+  .thumb {
+    height: 24px;
+  }
+}
+
+/* ── Image protection ────────────────────────────────────────────────────── */
+
+.stage img {
+  user-select: none;
+  -webkit-user-select: none;
+}

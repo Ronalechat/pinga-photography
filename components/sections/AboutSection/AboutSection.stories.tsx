@@ -14,7 +14,7 @@ const PLACEHOLDER_PHOTO = {
 }
 
 const meta: Meta<typeof AboutSection> = {
-  title:     'Pinga / Sections / AboutSection',
+  title:     'P!nga / Sections / AboutSection',
   component:  AboutSection,
   tags:      ['autodocs'],
   parameters: {

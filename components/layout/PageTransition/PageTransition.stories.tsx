@@ -52,7 +52,7 @@ function FakePage({ name }: { name: string }) {
           fontSize: '11px', letterSpacing: '0.2em',
           textTransform: 'uppercase', color: '#F2F2FC',
           marginBottom: '6px',
-        }}>Pinga</div>
+        }}>P!nga</div>
         <div style={{ display: 'flex', gap: '14px' }}>
           {['Gallery','Enquire'].map(l => (
             <span key={l} style={{
@@ -234,7 +234,7 @@ function StripRevealDemoOverlay({ trigger }: { trigger: number }) {
 // ─── Meta ────────────────────────────────────────────────────────────────────
 
 const meta: Meta<typeof PageTransition> = {
-  title:     'Pinga / Layout / PageTransition',
+  title:     'P!nga / Layout / PageTransition',
   component:  PageTransition,
   tags:      ['autodocs'],
   parameters: {

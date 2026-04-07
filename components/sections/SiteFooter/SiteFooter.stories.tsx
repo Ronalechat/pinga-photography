@@ -22,7 +22,7 @@ storyblokInit({ use: [apiPlugin] })
 // ─── Meta ────────────────────────────────────────────────────────────────────
 
 const meta: Meta<typeof SiteFooter> = {
-  title:     'Pinga / Layout / SiteFooter',
+  title:     'P!nga / Layout / SiteFooter',
   component:  SiteFooter,
   tags:      ['autodocs'],
   parameters: {
@@ -87,7 +87,7 @@ type Story = StoryObj<typeof SiteFooter>
  */
 export const Default: Story = {
   args: {
-    name:         'Pinga Matereke',
+    name:         'P!nga',
     instagramUrl: 'https://instagram.com/pinga.matereke',
     location:     'Sydney, AU',
     year:         2025,
@@ -103,7 +103,7 @@ export const FromStoryblok: Story = {
     blok: {
       _uid:          'site-footer-01',
       component:     'site_footer',
-      name:          'Pinga Matereke',
+      name:          'P!nga',
       instagram_url: 'https://instagram.com/pinga.matereke',
       location:      'Sydney, AU',
       year:          2025,
@@ -158,7 +158,7 @@ export const LongName: Story = {
 export const AutoYear: Story = {
   name: 'Auto year',
   args: {
-    name:         'Pinga Matereke',
+    name:         'P!nga',
     instagramUrl: 'https://instagram.com/pinga.matereke',
     location:     'Sydney, AU',
     // year omitted — defaults to new Date().getFullYear()

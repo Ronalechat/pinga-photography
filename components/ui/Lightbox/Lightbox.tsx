@@ -91,9 +91,6 @@ export default function Lightbox({
       {/* Top bar */}
       <div className={styles.topBar}>
         <Typography variant="eyebrow">{item.cat}</Typography>
-        <Typography variant="meta">
-          {String(index + 1).padStart(2, '0')} / {String(list.length).padStart(2, '0')}
-        </Typography>
         <button
           className={styles.closeBtn}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose() }}
@@ -107,6 +104,8 @@ export default function Lightbox({
             src={item.src}
             alt={`${item.cat} ${item.num}`}
             className={utilStyles.imgContain}
+            onContextMenu={(e) => e.preventDefault()}
+            draggable={false}
           />
         ) : (
           <div className={styles.placeholder} style={{ background: color }}>
@@ -147,8 +146,8 @@ export default function Lightbox({
             }}
           >
             {t.src
-              ? <img src={t.src} alt="" aria-hidden className={utilStyles.imgCover} />
-              : <Typography variant="meta">{t.num}</Typography>
+              ? <img src={t.src} alt="" aria-hidden className={utilStyles.imgCover} onContextMenu={(e) => e.preventDefault()} draggable={false} />
+              : null
             }
           </div>
         ))}

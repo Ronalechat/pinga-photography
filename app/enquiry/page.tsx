@@ -4,9 +4,9 @@ import PageHeader from '@/components/sections/PageHeader/PageHeader'
 import EnquiryForm from '@/components/sections/EnquiryForm/EnquiryForm'
 
 export const metadata: Metadata = {
-  title: 'Enquire — Pinga Matereke',
+  title: 'Enquire — P!nga | Hire a Sydney Photographer',
   description:
-    'Get in touch with Paul about street photography, portraits, engagements, and occasions.',
+    'Hire P!nga (Pinga Matereke) for street, party, rave, portrait, and event photography in Sydney. Get in touch.',
 }
 
 export default function EnquiryPage() {

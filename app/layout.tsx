@@ -10,22 +10,42 @@ import "@/styles/globals.css";
 // animates in. Preload both weights — Bold is used everywhere; Thin is used
 // for displayThin in AboutSection.
 const fontPreloads = [
-  { href: '/fonts/jeanlucweb-bold.woff', weight: '700' },
-  { href: '/fonts/jeanlucweb-thin.woff', weight: '100' },
-] as const
+  { href: "/fonts/jeanlucweb-bold.woff", weight: "700" },
+  { href: "/fonts/jeanlucweb-thin.woff", weight: "100" },
+] as const;
 
 export const metadata: Metadata = {
-  title: "Pinga Matereke Photography",
-  description: "Pinga Matereke Photography portfolio and job enquiries",
+  title: "P!nga Photography — Pinga Matereke | Sydney",
+  description:
+    "Pinga Matereke (P!nga) — African Australian photographer based in Sydney. " +
+    "Street, rave, party, and portrait photography. 35mm film & digital. Available to hire.",
+  keywords: [
+    "pinga photography",
+    "pinga matereke",
+    "matereke photography",
+    "african australian photographer",
+    "sydney street photography",
+    "party photographer",
+    "rave photographer",
+    "underground art sydney",
+    "contemporary photographer",
+    "35mm film photographer sydney",
+    "black and white photographer",
+    "street photographer hire",
+  ],
   openGraph: {
-    title: "Pinga Matereke Photography",
-    description: "Pinga Matereke Photography portfolio and job enquiries",
+    title: "P!nga Photography — Pinga Matereke | Sydney",
+    description:
+      "Pinga Matereke (P!nga) — African Australian photographer based in Sydney. " +
+      "Street, rave, party, and portrait photography. 35mm film & digital. Available to hire.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pinga Matereke Photography",
-    description: "Pinga Matereke Photography portfolio and job enquiries",
+    title: "P!nga Photography — Pinga Matereke | Sydney",
+    description:
+      "Pinga Matereke (P!nga) — African Australian photographer based in Sydney. " +
+      "Street, rave, party, and portrait photography. 35mm film & digital. Available to hire.",
   },
 };
 
@@ -48,14 +68,57 @@ export default function RootLayout({
             data-font-weight={weight}
           />
         ))}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": "Pinga Matereke",
+              "alternateName": "P!nga",
+              "jobTitle": "Photographer",
+              "sameAs": ["https://instagram.com/pinga.matereke"],
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Sydney",
+                "addressCountry": "AU",
+              },
+              "knowsAbout": [
+                "street photography",
+                "rave photography",
+                "party photography",
+                "portrait photography",
+                "film photography",
+                "black and white photography",
+                "underground art",
+              ],
+            }),
+          }}
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body suppressHydrationWarning>
         <StoryblokProvider>
           <SiteHeader />
-          <div style={{ isolation: 'isolate' }}>
-            <PageTransition variant="diagonalWipe">
-              {children}
-            </PageTransition>
+          <div style={{ isolation: "isolate" }}>
+            <PageTransition variant="diagonalWipe">{children}</PageTransition>
             <SiteFooter />
           </div>
         </StoryblokProvider>

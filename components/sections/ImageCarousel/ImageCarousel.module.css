@@ -2,6 +2,19 @@
   height: 100vh;
 }
 
+.root img {
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .root {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+}
+
 @media (max-width: 767px) {
   .root {
     height: auto;

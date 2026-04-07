@@ -69,7 +69,7 @@ function withBackdrop(background: string, label?: string) {
 // ─── Meta ────────────────────────────────────────────────────────────────────
 
 const meta: Meta<typeof SiteHeader> = {
-  title:     'Pinga / Layout / SiteHeader',
+  title:     'P!nga / Layout / SiteHeader',
   component:  SiteHeader,
   tags:      ['autodocs'],
   parameters: {
@@ -119,7 +119,7 @@ type Story = StoryObj<typeof SiteHeader>
  */
 export const OnDark: Story = {
   name: 'On dark background',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [withBackdrop('#16161D', 'Dark background — hero / gallery')],
 }
 
@@ -128,7 +128,7 @@ export const OnDark: Story = {
  */
 export const OnLight: Story = {
   name: 'On light background',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [withBackdrop('#F2F2FC', 'Light background — text inverts to dark')],
 }
 
@@ -137,7 +137,7 @@ export const OnLight: Story = {
  */
 export const OnColour: Story = {
   name: 'On colour background',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [withBackdrop(
     'linear-gradient(135deg, #8b3a2a 0%, #c4632a 100%)',
     'Colourful background — partial inversion'
@@ -151,7 +151,7 @@ export const OnColour: Story = {
  */
 export const OnSplit: Story = {
   name: 'Split background (pixel-by-pixel)',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [
     (Story: React.ComponentType) => (
       <div style={{
@@ -186,7 +186,7 @@ export const OnSplit: Story = {
  */
 export const OnHeroGradient: Story = {
   name: 'Over hero gradient',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [withBackdrop(
     'linear-gradient(to right, #16161D 0%, #3a3a6e 30%, #c4632a 65%, #F2F2FC 100%)',
     'Simulated hero image — blend tracks continuously'
@@ -198,7 +198,7 @@ export const OnHeroGradient: Story = {
  */
 export const Mobile: Story = {
   name: 'Mobile (375px)',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [withBackdrop('#16161D', 'Mobile — name left, links right')],
   parameters: {
     viewport: { defaultViewport: 'mobile1' },
@@ -216,7 +216,7 @@ export const Mobile: Story = {
  */
 export const GalleryActive: Story = {
   name: 'Gallery page (active state)',
-  args: { name: 'Pinga' },
+  args: { name: 'P!nga' },
   decorators: [withBackdrop('#16161D', '/gallery — active link dimmed')],
   beforeEach() {
     // Override the mocked usePathname so the Gallery link gets aria-current="page".
@@ -237,12 +237,12 @@ export const GalleryActive: Story = {
  */
 export const FullName: Story = {
   name: 'Full name variant',
-  args: { name: 'Pinga Matereke' },
+  args: { name: 'P!nga Mate' },
   decorators: [withBackdrop('#16161D')],
   parameters: {
     docs: {
       description: {
-        story: 'The `name` prop accepts any string. Useful if the brand voice shifts between the short "Pinga" and full "Pinga Matereke" at different breakpoints or page types.',
+        story: 'The `name` prop accepts any string. Useful if the brand voice shifts between the short "P!nga" and full "P!nga Mate" at different breakpoints or page types.',
       },
     },
   },

@@ -52,13 +52,13 @@ const NAV_LINKS = [
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 export interface SiteHeaderProps {
-  /** Photographer name shown as the home link. @default 'Pinga' */
+  /** Photographer name shown as the home link. @default 'P!nga' */
   name?: string
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function SiteHeader({ name = 'Pinga' }: SiteHeaderProps) {
+export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
 
   /**

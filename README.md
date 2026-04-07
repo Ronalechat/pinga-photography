@@ -1,4 +1,4 @@
-# pinga-photography
+# p!nga-photography
 
 Photography portfolio website built with Next.js and Storyblok CMS.
 
@@ -12,11 +12,11 @@ Photography portfolio website built with Next.js and Storyblok CMS.
 
 ## Routes
 
-| Route      | Description                          |
-| ---------- | ------------------------------------ |
-| `/`        | Landing page with scroll hero        |
-| `/gallery` | Full gallery — all categories        |
-| `/enquiry` | Enquiry / contact form               |
+| Route      | Description                   |
+| ---------- | ----------------------------- |
+| `/`        | Landing page with scroll hero |
+| `/gallery` | Full gallery — all categories |
+| `/enquiry` | Enquiry / contact form        |
 
 ## Local Development
 

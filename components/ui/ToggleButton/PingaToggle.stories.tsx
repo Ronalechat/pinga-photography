@@ -5,7 +5,7 @@ import PingaToggle from './PingaToggle'
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
 const meta = {
-  title: 'Pinga / UI / PingaToggle',
+  title: 'P!nga / UI / PingaToggle',
   component: PingaToggle,
   tags: ['autodocs'],
   decorators: [

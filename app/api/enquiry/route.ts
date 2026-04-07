@@ -19,15 +19,18 @@ function validateBody(body: Record<string, unknown>): string | null {
   const email   = sanitize(body.email)
   const message = sanitize(body.message)
   const phone   = sanitize(body.phone)
+  const date    = sanitize(body.date)
 
-  if (!name)                         return 'Name is required'
-  if (name.length > 120)             return 'Name must be 120 characters or fewer'
-  if (!email)                        return 'Email is required'
-  if (!EMAIL_RE.test(email))         return 'Email address is invalid'
-  if (!message)                      return 'Message is required'
-  if (message.length > 5000)         return 'Message must be 5000 characters or fewer'
-  if (phone && !PHONE_RE.test(phone)) return 'Phone number contains invalid characters'
-  if (phone && phone.length > 30)    return 'Phone number must be 30 characters or fewer'
+  if (!name)                          return 'Name is required'
+  if (name.length > 120)              return 'Name must be 120 characters or fewer'
+  if (!email)                         return 'Email is required'
+  if (!EMAIL_RE.test(email))          return 'Email address is invalid'
+  if (!phone)                         return 'Phone is required'
+  if (!PHONE_RE.test(phone))          return 'Phone number contains invalid characters'
+  if (phone.length > 30)              return 'Phone number must be 30 characters or fewer'
+  if (!date)                          return 'Date is required'
+  if (!message)                       return 'Message is required'
+  if (message.length > 5000)          return 'Message must be 5000 characters or fewer'
 
   return null
 }

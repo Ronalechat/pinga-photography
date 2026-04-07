@@ -7,7 +7,7 @@
  *
  * STORYBLOK CONTENT TYPE
  * Create a "site_footer" component (or manage as a global datasource) with:
- *   name          Text    Photographer name, e.g. "Pinga Matereke"
+ *   name          Text    Photographer name, e.g. "P!nga"
  *   instagram_url Text    Full URL, e.g. "https://instagram.com/pinga.matereke"
  *   location      Text    e.g. "Sydney, AU"
  *   year          Number  Copyright year, e.g. 2025
@@ -62,7 +62,7 @@ export interface SiteFooterProps {
 
 export default function SiteFooter({
   blok,
-  name         = blok?.name          ?? 'Pinga Matereke',
+  name         = blok?.name          ?? 'P!nga',
   instagramUrl = blok?.instagram_url ?? 'https://instagram.com/pinga.matereke',
   location     = blok?.location      ?? 'Sydney, AU',
   year         = blok?.year          ?? new Date().getFullYear(),

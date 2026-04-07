@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { COLOR } from '@tokens'
 import Typography from '@/components/ui/Typography/Typography'
@@ -89,12 +89,38 @@ export default function ScrollHero({
   const count  = slides.length
   const router = useRouter()
 
-  // Auto-calculate from slide count, allow manual override
-  // scrollMultiplier: ~0.9vh of scroll per slide + 1vh buffer
+  // Viewport size tracked only at breakpoint crossings (not per frame) — safe per CLAUDE.md.
+  // Drives a smaller scroll multiplier on mobile/tablet so touch-scroll feels responsive.
+  const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop')
+
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 767px)')
+    const tablet = window.matchMedia('(max-width: 1023px)')
+    const update = () => {
+      if (mobile.matches)       setViewportSize('mobile')
+      else if (tablet.matches)  setViewportSize('tablet')
+      else                      setViewportSize('desktop')
+    }
+    update()
+    mobile.addEventListener('change', update)
+    tablet.addEventListener('change', update)
+    return () => {
+      mobile.removeEventListener('change', update)
+      tablet.removeEventListener('change', update)
+    }
+  }, [])
+
+  // Auto-calculate from slide count, allow manual override.
+  // Mobile/tablet use smaller multipliers so fewer pixels of scroll separate slides.
+  // scrollMultiplier: ~0.9vh of scroll per slide + 1vh buffer (desktop)
   //   3 slides → 3.7, 5 slides → 5.5, 8 slides → 8.2
   // transitionZone: fewer slides = longer crossfade, more = snappier
   //   3 slides → 0.32, 5 slides → 0.25, 8 slides → 0.21
-  const resolvedMultiplier = scrollMultiplier ?? count * 0.9 + 1
+  const resolvedMultiplier = scrollMultiplier ?? (
+    viewportSize === 'mobile' ? count * 0.45 + 0.5 :
+    viewportSize === 'tablet' ? count * 0.65 + 0.7 :
+    count * 0.9 + 1
+  )
   const resolvedTransition = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
 
   const outerRef    = useRef<HTMLDivElement>(null)
@@ -106,6 +132,9 @@ export default function ScrollHero({
   // Cached layout measurements — only valid after mount, invalidated on resize.
   // Reading these in the rAF loop avoids forced reflow from getBoundingClientRect/offsetHeight.
   const layoutCache = useRef<{ outerTop: number; scrollable: number } | null>(null)
+  // Snap-to-slide state — updated each frame, read after scroll idle timer fires.
+  const snapStateRef = useRef<{ cur: number; t: number; inT: boolean } | null>(null)
+  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const update = useCallback(() => {
     const outer = outerRef.current
@@ -122,6 +151,9 @@ export default function ScrollHero({
     const tStart = 1 - resolvedTransition
     const inT    = frac > tStart && cur < count - 1
     const t      = inT ? easeInOut((frac - tStart) / resolvedTransition) : 0
+
+    // Update snap state so the idle handler knows where to land
+    snapStateRef.current = { cur, t, inT }
 
     // Slide opacities + pointer events (only the visible slide receives clicks)
     slideRefs.current.forEach((slide, i) => {
@@ -210,11 +242,25 @@ export default function ScrollHero({
       cancelAnimationFrame(rafId)
     }
 
-    // Scroll events spin up the loop; idle timeout shuts it down
+    // After scrolling stops and we're mid-crossfade, snap to the nearer slide.
+    // Fires only when inT is true — stable "slide fully shown" positions do nothing.
+    const snapToNearest = () => {
+      const s = snapStateRef.current
+      const cache = layoutCache.current
+      if (!s || !cache || !s.inT) return
+      const targetSlide = s.t > 0.5 ? Math.min(s.cur + 1, count - 1) : s.cur
+      const targetNorm  = targetSlide / (count - 1 + resolvedTransition * 2)
+      const targetY     = cache.outerTop + targetNorm * cache.scrollable
+      window.scrollTo({ top: targetY, behavior: 'smooth' })
+    }
+
+    // Scroll events spin up the loop; idle timeout shuts it down and snaps
     const onScroll = () => {
       start()
       if (idleTimer) clearTimeout(idleTimer)
       idleTimer = setTimeout(stop, 150)
+      if (snapTimerRef.current) clearTimeout(snapTimerRef.current)
+      snapTimerRef.current = setTimeout(snapToNearest, 200)
     }
 
     // IO gates visibility — don't burn frames when off-screen
@@ -244,6 +290,7 @@ export default function ScrollHero({
     return () => {
       stop()
       if (idleTimer) clearTimeout(idleTimer)
+      if (snapTimerRef.current) clearTimeout(snapTimerRef.current)
       observer?.disconnect()
       ro.disconnect()
       window.removeEventListener('resize', measureLayout)

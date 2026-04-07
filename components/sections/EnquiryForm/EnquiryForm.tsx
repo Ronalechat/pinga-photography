@@ -43,7 +43,7 @@ const OCCASION_OPTIONS = [
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
-type FieldErrors = { email?: string; phone?: string }
+type FieldErrors = { email?: string; phone?: string; date?: string }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -76,8 +76,13 @@ export default function EnquiryForm({
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = 'Please enter a valid email address.'
     }
-    if (phone && !/^[\d\s+\-(). ]+$/.test(phone)) {
+    if (!phone.trim()) {
+      e.phone = 'Please include a phone number.'
+    } else if (!/^[\d\s+\-(). ]+$/.test(phone)) {
       e.phone = 'Phone may only contain digits, spaces, and + - ( ).'
+    }
+    if (!date.trim()) {
+      e.date = 'Please let us know when you\'re thinking.'
     }
     return e
   }
@@ -115,7 +120,7 @@ export default function EnquiryForm({
           <p className={styles.sentName}>
             Thanks{firstName ? `, ${firstName}` : ''}.
           </p>
-          <p className={styles.sentCopy}>Paul will be in touch shortly.</p>
+          <p className={styles.sentCopy}>P!nga will be in touch shortly.</p>
         </div>
       </section>
     )
@@ -133,8 +138,7 @@ export default function EnquiryForm({
             Let&apos;s work<br />together
           </h2>
           <p className={styles.sub}>
-            Tell me about the moment you want captured. I&apos;ll get back to
-            you within two business days.
+            Tell me about the moment you want captured. P!nga will get back to you shortly.
           </p>
         </div>
 
@@ -185,14 +189,12 @@ export default function EnquiryForm({
 
           {/* Phone */}
           <div className={styles.field}>
-            <label htmlFor="ef-phone" className={styles.fieldLabel}>
-              Phone
-              <span className={styles.fieldLabelOptional}>Optional</span>
-            </label>
+            <label htmlFor="ef-phone" className={styles.fieldLabel}>Phone</label>
             <input
               id="ef-phone"
               name="phone"
               type="tel"
+              required
               autoComplete="tel"
               value={phone}
               onChange={(e) => {
@@ -220,25 +222,30 @@ export default function EnquiryForm({
                   selected={occasions}
                   onChange={(v) => setOccasions(v as string[])}
                   multiSelect
+                  variant="primary"
                 />
               </div>
             </div>
 
             {/* Date */}
             <div className={styles.field}>
-              <label htmlFor="ef-date" className={styles.fieldLabel}>
-                When are you thinking?
-                <span className={styles.fieldLabelOptional}>Optional</span>
-              </label>
+              <label htmlFor="ef-date" className={styles.fieldLabel}>When are you thinking?</label>
               <input
                 id="ef-date"
                 name="date"
                 type="text"
+                required
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className={styles.input}
+                onChange={(e) => {
+                  setDate(e.target.value)
+                  if (errors.date) setErrors(prev => ({ ...prev, date: undefined }))
+                }}
+                className={[styles.input, errors.date ? styles.inputError : ''].filter(Boolean).join(' ')}
                 placeholder="e.g. March 2025, or flexible"
+                aria-invalid={!!errors.date}
+                aria-describedby={errors.date ? 'ef-date-error' : undefined}
               />
+              {errors.date && <p id="ef-date-error" className={styles.fieldError} role="alert">{errors.date}</p>}
             </div>
 
             {/* Tell me more */}

@@ -13,9 +13,14 @@
  *     Clicking an active option deselects it.
  *     `selected` is a string[]; `onChange` is called with a string[].
  *
+ * VARIANTS
+ *   default — standard resting-state opacity (more subtle).
+ *   primary — higher contrast borders and text at rest. The canonical style
+ *     used in both KineticGrid and EnquiryForm.
+ *
  * CURRENT USAGE
- *   KineticGrid.tsx  — single select, category filter (multiSelect: false)
- *   EnquiryForm.tsx  — multi  select, occasion picker (multiSelect: true)
+ *   KineticGrid.tsx  — single select, category filter (variant="primary")
+ *   EnquiryForm.tsx  — multi  select, occasion picker (variant="primary")
  *
  * See PingaToggle.module.css for animation details and colour values.
  */
@@ -29,6 +34,7 @@ export interface PingaToggleProps {
   selected:     string | string[]
   onChange:     (value: string | string[]) => void
   multiSelect?: boolean
+  variant?:     'default' | 'primary'
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -38,6 +44,7 @@ export default function PingaToggle({
   selected,
   onChange,
   multiSelect = false,
+  variant = 'default',
 }: PingaToggleProps) {
   function isSelected(option: string): boolean {
     return Array.isArray(selected)
@@ -59,7 +66,7 @@ export default function PingaToggle({
   }
 
   return (
-    <div className={styles.group} role="group">
+    <div className={[styles.group, variant === 'primary' ? styles.primary : ''].filter(Boolean).join(' ')} role="group">
       {options.map((option) => {
         const active = isSelected(option)
         return (
