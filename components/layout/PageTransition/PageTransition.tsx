@@ -172,7 +172,7 @@ function StripRevealOverlay({ trigger }: { trigger: number }) {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReduced) return
 
-    async function play() {
+    function play() {
       const strips = stripRefs.current.filter(Boolean) as HTMLDivElement[]
 
       // Reset all strips to starting position
@@ -184,18 +184,15 @@ function StripRevealOverlay({ trigger }: { trigger: number }) {
       const durationMs = 420
 
       strips.forEach((s, i) => {
-        setTimeout(() => {
+        timerIds.push(setTimeout(() => {
           s.style.transition = `transform ${durationMs}ms cubic-bezier(0.76, 0, 0.24, 1)`
           s.style.transform = 'translateY(-101%)'
-        }, i * staggerMs)
+        }, i * staggerMs))
       })
-
-      // Wait for last strip to complete
-      await new Promise(r =>
-        setTimeout(r, staggerMs * (STRIP_COUNT - 1) + durationMs + 20)
-      )
     }
+    const timerIds: ReturnType<typeof setTimeout>[] = []
     play()
+    return () => { timerIds.forEach(id => clearTimeout(id)) }
   }, [trigger, animate, scope])
 
   const strips = Array.from({ length: STRIP_COUNT }, (_, i) => i)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { COLOR, FONT, FONT_SIZE, LETTER_SPACING, SPACE, DURATION } from '@tokens'
 import styles from './ImageCarousel.module.css'
 
@@ -176,26 +176,21 @@ function CarouselControls({
 
 // ─── Ghost button — no border, no background, no outline ─────────────────────
 //
-// All styles applied inline to guarantee no browser or framework default
-// leaks through. This is the pattern for any button that should be invisible
-// until interacted with. Document as btn-ghost in the design system.
+// Resting/hover/active opacity is handled entirely by CSS pseudo-classes in
+// ImageCarousel.module.css. Previously this used useState for hovered/pressed,
+// which triggered a React re-render on every mousemove. CSS :hover/:active is
+// free — it runs in the compositor without touching the JS thread.
 
 function GhostBtn({
   onClick,
   children,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const [hovered, setHovered] = useState(false)
-  const [pressed, setPressed]  = useState(false)
-
   return (
     <button
       {...props}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setPressed(false) }}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
+      className={styles.ghostBtn}
       style={{
         // All browser defaults explicitly cleared
         appearance: 'none',
@@ -210,8 +205,6 @@ function GhostBtn({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: pressed ? 0.5 : hovered ? 0.85 : 0.3,
-        transition: `opacity ${DURATION.fast} ease`,
       }}
     >
       {children}

@@ -93,6 +93,7 @@ export default function Lightbox({
         <Typography variant="eyebrow">{item.cat}</Typography>
         <button
           className={styles.closeBtn}
+          aria-label="Close lightbox"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose() }}
         >✕</button>
       </div>

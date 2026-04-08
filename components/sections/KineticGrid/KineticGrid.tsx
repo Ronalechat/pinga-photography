@@ -89,6 +89,8 @@ function Card({ item, colIndex, color, onClick }: {
           src={item.src}
           alt={`${item.cat} ${item.num}`}
           className={utilStyles.imgBlock}
+          loading="lazy"
+          decoding="async"
           onContextMenu={(e) => e.preventDefault()}
           draggable={false}
         />
@@ -134,6 +136,17 @@ export default function KineticGrid({
 
   const activeList = activeFilter === 'all' ? allItems : (categories[activeFilter] ?? [])
 
+  // Cache the prefers-reduced-motion value — querying matchMedia per frame (or per scroll
+  // event) creates a new MQL object each time. One cached ref + a change listener is enough.
+  const reducedMotionRef = useRef(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)')
+    reducedMotionRef.current = mql.matches
+    const onChange = (e: MediaQueryListEvent) => { reducedMotionRef.current = e.matches }
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+
   // Scroll-based reveal — uses getBoundingClientRect so it works in any scroll context.
   // Transition uses opacity + transform (compositor-only) rather than clip-path (repaint per frame).
   //
@@ -145,7 +158,11 @@ export default function KineticGrid({
   const checkReveals = useCallback(() => {
     const shell = shellRef.current
     if (!shell) return
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reducedMotion = reducedMotionRef.current
+
+    // Early-exit: if the shell itself is fully offscreen, no card can be visible.
+    const shellRect = shell.getBoundingClientRect()
+    if (shellRect.bottom < 0 || shellRect.top > window.innerHeight) return
 
     const doReveal = (card: HTMLElement) => {
       const col = parseInt(card.dataset.col ?? '0')
@@ -188,19 +205,33 @@ export default function KineticGrid({
     const shell = shellRef.current
     if (!shell) return
     shell.scrollIntoView({ behavior: 'instant' })
-    requestAnimationFrame(checkReveals)
+
+    let rafId = 0
+    let rafPending = false
+    let isVisible = true
+    rafId = requestAnimationFrame(checkReveals)
 
     // Gate the scroll listener with rAF — collapses N scroll events per frame
     // into a single checkReveals call, matching the ScrollHero pattern.
-    let rafPending = false
+    // IntersectionObserver suspends the rAF gate when the grid is fully offscreen,
+    // so zero work is done during other-page scrolling.
     const onScroll = () => {
-      if (rafPending) return
+      if (rafPending || !isVisible) return
       rafPending = true
-      requestAnimationFrame(() => { checkReveals(); rafPending = false })
+      rafId = requestAnimationFrame(() => { checkReveals(); rafPending = false })
+    }
+
+    let observer: IntersectionObserver | null = null
+    if (typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        ([entry]) => { isVisible = entry.isIntersecting },
+        { rootMargin: '200px 0px' },
+      )
+      observer.observe(shell)
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => { cancelAnimationFrame(rafId); observer?.disconnect(); window.removeEventListener('scroll', onScroll) }
   }, [activeFilter, checkReveals])
 
   useEffect(() => {

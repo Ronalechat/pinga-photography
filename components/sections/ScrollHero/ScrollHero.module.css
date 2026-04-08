@@ -149,6 +149,9 @@
   50%       { opacity: 0.8; }
 }
 
+/* ── Pause CSS animations when offscreen (toggled by IO in ScrollHero.tsx) ── */
+.paused .hintLine { animation-play-state: paused; }
+
 /* ── Reduced motion ────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .hintLine { animation: none; opacity: 0.5; }

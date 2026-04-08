@@ -124,6 +124,7 @@ export default function ScrollHero({
   const resolvedTransition = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
 
   const outerRef    = useRef<HTMLDivElement>(null)
+  const stageRef    = useRef<HTMLDivElement>(null)
   const slideRefs   = useRef<(HTMLDivElement | null)[]>([])
   const dotRefs     = useRef<(HTMLDivElement | null)[]>([])
   const barRef      = useRef<HTMLDivElement>(null)
@@ -135,6 +136,10 @@ export default function ScrollHero({
   // Snap-to-slide state — updated each frame, read after scroll idle timer fires.
   const snapStateRef = useRef<{ cur: number; t: number; inT: boolean } | null>(null)
   const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // willChange promotion — tracks which pair of slides is currently composited
+  // so we only set/clear willChange at transition boundaries, not every frame.
+  const wcPromotedRef = useRef<{ cur: number; nxt: number } | null>(null)
+  const wcTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const update = useCallback(() => {
     const outer = outerRef.current
@@ -154,6 +159,38 @@ export default function ScrollHero({
 
     // Update snap state so the idle handler knows where to land
     snapStateRef.current = { cur, t, inT }
+
+    // willChange promotion — only the two slides actively crossfading need a
+    // compositor layer. Promoting all slides simultaneously costs GPU memory.
+    // We set willChange:'opacity' on cur+nxt when a transition begins, then
+    // schedule a cleanup after the transition duration so the layers are released.
+    if (inT) {
+      const promoted = wcPromotedRef.current
+      if (!promoted || promoted.cur !== cur || promoted.nxt !== nxt) {
+        // Clear any pending cleanup timer from a previous pair
+        if (wcTimerRef.current) clearTimeout(wcTimerRef.current)
+        // Release previous pair if different slides
+        if (promoted) {
+          const prevCur = slideRefs.current[promoted.cur]
+          const prevNxt = slideRefs.current[promoted.nxt]
+          if (prevCur) prevCur.style.willChange = 'auto'
+          if (prevNxt) prevNxt.style.willChange = 'auto'
+        }
+        // Promote the new pair
+        const sCur = slideRefs.current[cur]
+        const sNxt = slideRefs.current[nxt]
+        if (sCur) sCur.style.willChange = 'opacity'
+        if (sNxt) sNxt.style.willChange = 'opacity'
+        wcPromotedRef.current = { cur, nxt }
+        // Schedule layer release after the transition eases out
+        wcTimerRef.current = setTimeout(() => {
+          if (sCur) sCur.style.willChange = 'auto'
+          if (sNxt) sNxt.style.willChange = 'auto'
+          wcPromotedRef.current = null
+          wcTimerRef.current = null
+        }, resolvedTransition * 1000 + 50)
+      }
+    }
 
     // Slide opacities + pointer events (only the visible slide receives clicks)
     slideRefs.current.forEach((slide, i) => {
@@ -269,6 +306,8 @@ export default function ScrollHero({
       observer = new IntersectionObserver(
         ([entry]) => {
           isIntersecting = entry.isIntersecting
+          // Pause/resume CSS animations (e.g. hint pulse) alongside the rAF loop
+          stageRef.current?.classList.toggle(styles.paused, !isIntersecting)
           if (!isIntersecting) stop()
           else start()   // re-arm the loop when element re-enters viewport
         },
@@ -291,6 +330,11 @@ export default function ScrollHero({
       stop()
       if (idleTimer) clearTimeout(idleTimer)
       if (snapTimerRef.current) clearTimeout(snapTimerRef.current)
+      if (wcTimerRef.current) clearTimeout(wcTimerRef.current)
+      // Release all compositor layers on unmount — prevents memory leaks if the
+      // component is replaced before the cleanup setTimeout fires.
+      slideRefs.current.forEach(s => { if (s) s.style.willChange = 'auto' })
+      wcPromotedRef.current = null
       observer?.disconnect()
       ro.disconnect()
       window.removeEventListener('resize', measureLayout)
@@ -303,7 +347,7 @@ export default function ScrollHero({
   return (
     <div ref={outerRef} style={{ height: `${resolvedMultiplier * 100}vh`, position: 'relative' }}>
 
-      <div className={styles.stage}>
+      <div ref={stageRef} className={styles.stage}>
 
         {/* ── Slides ── */}
         {slides.map((slide, i) => (
@@ -314,9 +358,8 @@ export default function ScrollHero({
             aria-label={slide.alt ?? slide.label}
             onClick={slide.href ? () => router.push(slide.href!) : undefined}
             style={{
-              opacity:    0,
-              willChange: 'opacity',
-              cursor:     slide.href ? 'pointer' : undefined,
+              opacity: 0,
+              cursor:  slide.href ? 'pointer' : undefined,
               ...(slide.src
                 ? { backgroundImage: `url('${slide.src}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
                 : { background: slide.background ?? COLOR.bgPrimary }

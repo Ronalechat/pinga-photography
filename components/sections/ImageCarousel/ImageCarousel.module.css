@@ -2,6 +2,14 @@
   height: 100vh;
 }
 
+/* ── Ghost button — resting/hover/active opacity via CSS, zero JS re-renders ── */
+.ghostBtn {
+  opacity: 0.3;
+  transition: opacity var(--duration-fast) ease;
+}
+.ghostBtn:hover  { opacity: 0.85; }
+.ghostBtn:active { opacity: 0.5; }
+
 .root img {
   user-select: none;
   -webkit-user-select: none;
