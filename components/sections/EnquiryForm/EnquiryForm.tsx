@@ -126,10 +126,12 @@ export default function EnquiryForm({
     return (
       <section id="enquire" className={styles.root} aria-label="Enquiry sent">
         <div className={styles.sent}>
-          <p className={styles.sentName}>
+          <Typography variant="displayThin" as="p" className={styles.sentName}>
             Thanks{firstName ? `, ${firstName}` : ''}.
-          </p>
-          <p className={styles.sentCopy}>P!nga will be in touch shortly.</p>
+          </Typography>
+          <Typography variant="body" as="p" color="var(--color-text-muted-high)" className={styles.sentCopy}>
+            P!nga will be in touch shortly.
+          </Typography>
         </div>
       </section>
     )
@@ -143,12 +145,12 @@ export default function EnquiryForm({
 
         {/* ── Left: intro ── */}
         <div className={styles.intro}>
-          <h2 className={styles.heading}>
+          <Typography variant="displayThin" as="h2" className={styles.heading}>
             Let&apos;s work<br />together
-          </h2>
-          <p className={styles.sub}>
+          </Typography>
+          <Typography variant="body" as="p" className={styles.sub}>
             Tell me about the moment you want captured. P!nga will get back to you shortly.
-          </p>
+          </Typography>
         </div>
 
         {/* ── Right: form ── */}

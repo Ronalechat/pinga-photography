@@ -250,7 +250,12 @@ export default function ScrollHero({
     img.onerror = () => { clearTimeout(fallback); reveal() }
     img.src = src
 
-    return () => { cancelled = true; clearTimeout(fallback) }
+    return () => {
+      cancelled = true
+      clearTimeout(fallback)
+      img.onload = null
+      img.onerror = null
+    }
   }, [slides])
 
   useEffect(() => {
@@ -375,7 +380,13 @@ export default function ScrollHero({
   }, [update])
 
   return (
-    <div ref={outerRef} style={{ height: `calc(${resolvedMultiplier} * 100dvh)`, position: 'relative' }}>
+    <div
+      ref={outerRef}
+      role="region"
+      aria-label="Featured work"
+      aria-roledescription="carousel"
+      style={{ height: `calc(${resolvedMultiplier} * 100dvh)`, position: 'relative' }}
+    >
 
       <div ref={stageRef} className={styles.stage}>
 
@@ -386,9 +397,18 @@ export default function ScrollHero({
             ref={el => { slideRefs.current[i] = el }}
             className={styles.slide}
             aria-label={slide.alt ?? slide.label}
+            tabIndex={slide.href ? 0 : undefined}
+            role={slide.href ? 'link' : undefined}
             onClick={slide.href ? () => {
               analytics.track('Hero Slide Clicked', { href: slide.href!, slideIndex: i })
               router.push(slide.href!)
+            } : undefined}
+            onKeyDown={slide.href ? (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                analytics.track('Hero Slide Clicked', { href: slide.href!, slideIndex: i })
+                router.push(slide.href!)
+              }
             } : undefined}
             style={{
               opacity: 0,
@@ -417,12 +437,16 @@ export default function ScrollHero({
         </div>
 
         {/* ── Nav dots (tablet+ via CSS) ── */}
-        <div className={styles.dots}>
+        <div className={styles.dots} role="tablist" aria-label="Slide navigation">
           {slides.map((slide, i) => (
             <div
               key={slide.label}
               ref={el => { dotRefs.current[i] = el }}
               className={styles.dot}
+              role="tab"
+              aria-label={slide.label}
+              aria-selected={i === 0}
+              tabIndex={0}
               style={{
                 background: i === 0 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)',
                 transform:  i === 0 ? 'scale(1.5)' : 'scale(1)',
