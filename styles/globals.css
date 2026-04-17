@@ -161,6 +161,13 @@ body {
 body {
   min-height: 100dvh;
   overscroll-behavior-y: none;
+  /*
+   * isolation: isolate makes body a stacking context so body::before at
+   * z-index: -1 sits above body's background-color but below all children.
+   * Without this, z-index: -1 on a fixed child would fall behind the root
+   * background and disappear.
+   */
+  isolation: isolate;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
@@ -169,15 +176,12 @@ body {
 }
 
 /*
- * Grain texture — single fixed overlay using mix-blend-mode: overlay.
- * mix-blend-mode (element-level) has full iOS Safari support, unlike
- * background-blend-mode (background-layer blending) which iOS ignores on
- * body/html, causing raw feTurbulence to render as full-intensity static.
- * z-index: var(--z-toast) places it above all page content; pointer-events: none
- * keeps it non-interactive. On dark backgrounds the overlay formula produces
- * subtle grain; on images it reads as a light film texture.
- * Wrapped in @supports so browsers that don't blend correctly fall back to
- * plain dark background — no raw SVG turbulence ever exposed as static.
+ * Grain texture — fixed pseudo-element behind all page content.
+ * z-index: -1 within body's isolated stacking context places the grain above
+ * body's background-color but below every child element — images, headers,
+ * modals. No shadowy overlay, no z-index conflicts with SiteHeader or Lightbox.
+ * mix-blend-mode: overlay blends the noise with body's dark background,
+ * producing subtle grain. Wrapped in @supports: no raw static if unsupported.
  */
 @supports (mix-blend-mode: overlay) {
   body::before {
@@ -188,7 +192,7 @@ body {
     background-size: 256px 256px;
     mix-blend-mode: overlay;
     pointer-events: none;
-    z-index: var(--z-toast);
+    z-index: -1;
   }
 }
 
