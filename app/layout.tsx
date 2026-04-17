@@ -3,6 +3,7 @@ import StoryblokProvider from "@/components/StoryblokProvider";
 import SiteHeader from "@/components/sections/SiteHeader/SiteHeader";
 import SiteFooter from "@/components/sections/SiteFooter/SiteFooter";
 import PageTransition from "@/components/layout/PageTransition/PageTransition";
+import SkipLink from "@/components/ui/SkipLink/SkipLink";
 import "@/styles/globals.css";
 
 // Preload Jean-Luc fonts to prevent flash of unstyled text on the hero.
@@ -117,21 +118,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <StoryblokProvider>
-          <a
-            href="#main-content"
-            style={{
-              position: 'absolute', top: '-100%', left: 0, zIndex: 9999,
-              padding: '8px 16px',
-              background: 'var(--color-bg-primary)',
-              color: 'var(--color-text-primary)',
-              fontFamily: 'var(--font-serif)',
-              fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase',
-            }}
-            onFocus={e => { (e.currentTarget as HTMLAnchorElement).style.top = '0' }}
-            onBlur={e => { (e.currentTarget as HTMLAnchorElement).style.top = '-100%' }}
-          >
-            Skip to content
-          </a>
+          <SkipLink />
           <SiteHeader />
           <div style={{ isolation: "isolate" }}>
             <main id="main-content">

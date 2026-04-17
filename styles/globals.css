@@ -157,17 +157,7 @@
 
 html {
   height: 100%;
-  /*
-   * Full grain treatment on html — not just background-color.
-   * When mobile browser chrome collapses, the viewport expands and briefly
-   * exposes the html element. background-blend-mode only works when both
-   * background-color AND background-image are on the same element; without
-   * the image here, raw SVG turbulence renders as white static.
-   */
   background-color: var(--color-bg-primary);
-  background-image: var(--bg-noise);
-  background-size: 256px 256px;
-  background-blend-mode: overlay;
 }
 
 html,
@@ -176,23 +166,31 @@ body {
 }
 
 body {
-  min-height: 100dvh; /* dvh updates as browser chrome collapses — keeps body covering the viewport */
-  overscroll-behavior-y: none; /* prevents rubber-band overscroll exposing the area behind the page */
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
   background-color: var(--color-bg-primary);
-  /*
-   * Grain texture — SVG feTurbulence noise blended directly with the body
-   * background-color via background-blend-mode. This means the grain is a
-   * property of the background itself, not an overlay layer: images, cards,
-   * and all child elements sit naturally above it and are completely unaffected.
-   * No z-index games, no mix-blend-mode on a pseudo-element, no impact on photos.
-   */
-  background-image: var(--bg-noise);
-  background-size: 256px 256px;
-  background-blend-mode: overlay;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Grain texture — fixed pseudo-element so the noise tile never scrolls or
+ * repaints. opacity controls intensity directly, avoiding background-blend-mode
+ * which iOS Safari ignores on body, causing raw feTurbulence to render as
+ * full-intensity static. pointer-events: none keeps it non-interactive.
+ * Normal flow body children stack above it without needing explicit z-index.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: var(--bg-noise);
+  background-size: 256px 256px;
+  opacity: 0.045;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /*
@@ -215,6 +213,5 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Grain is decorative — remove it when motion/visual effects are reduced */
-  body { background-image: none; }
+  body::before { display: none; }
 }
