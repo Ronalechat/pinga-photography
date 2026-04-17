@@ -131,16 +131,9 @@
   --focus-ring: 0 0 0 2px rgba(242,242,252,0.60);
 
   /*
-   * ── Grain noise — shared across body and all section containers ────────────
-   * Apply the full trio (image + size + blend-mode) anywhere a surface should
-   * carry the grain texture. Only used with background-color: var(--color-bg-primary).
-   * Lightbox is intentionally excluded (full-screen overlay, grain not needed).
-   *
-   * Usage in any CSS module:
-   *   background-color: var(--color-bg-primary);
-   *   background-image: var(--bg-noise);
-   *   background-size: 256px 256px;
-   *   background-blend-mode: overlay;
+   * ── Grain noise — applied globally via body::before (see below) ────────────
+   * Do not apply this to individual sections. The single body::before overlay
+   * with mix-blend-mode: overlay covers the entire viewport.
    */
   --bg-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
@@ -176,11 +169,13 @@ body {
 }
 
 /*
- * Grain texture — fixed pseudo-element so the noise tile never scrolls or
- * repaints. opacity controls intensity directly, avoiding background-blend-mode
- * which iOS Safari ignores on body, causing raw feTurbulence to render as
- * full-intensity static. pointer-events: none keeps it non-interactive.
- * Normal flow body children stack above it without needing explicit z-index.
+ * Grain texture — single fixed overlay using mix-blend-mode: overlay.
+ * mix-blend-mode (element-level) has full iOS Safari support, unlike
+ * background-blend-mode (background-layer blending) which iOS ignores on
+ * body/html, causing raw feTurbulence to render as full-intensity static.
+ * z-index: var(--z-toast) places it above all page content; pointer-events: none
+ * keeps it non-interactive. On dark backgrounds the overlay formula produces
+ * subtle grain; on images it reads as a light film texture.
  */
 body::before {
   content: '';
@@ -188,9 +183,9 @@ body::before {
   inset: 0;
   background-image: var(--bg-noise);
   background-size: 256px 256px;
-  opacity: 0.045;
+  mix-blend-mode: overlay;
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-toast);
 }
 
 /*

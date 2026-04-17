@@ -28,9 +28,6 @@
 
 .root {
   background-color: var(--color-bg-primary);
-  background-image: var(--bg-noise);
-  background-size: 256px 256px;
-  background-blend-mode: overlay;
   padding: 64px 40px 32px;
 }
 
