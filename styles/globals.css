@@ -176,16 +176,20 @@ body {
  * z-index: var(--z-toast) places it above all page content; pointer-events: none
  * keeps it non-interactive. On dark backgrounds the overlay formula produces
  * subtle grain; on images it reads as a light film texture.
+ * Wrapped in @supports so browsers that don't blend correctly fall back to
+ * plain dark background — no raw SVG turbulence ever exposed as static.
  */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: var(--bg-noise);
-  background-size: 256px 256px;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  z-index: var(--z-toast);
+@supports (mix-blend-mode: overlay) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: var(--bg-noise);
+    background-size: 256px 256px;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: var(--z-toast);
+  }
 }
 
 /*
@@ -207,6 +211,8 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  body::before { display: none; }
+@supports (mix-blend-mode: overlay) {
+  @media (prefers-reduced-motion: reduce) {
+    body::before { display: none; }
+  }
 }

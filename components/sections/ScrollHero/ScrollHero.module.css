@@ -21,8 +21,7 @@
   background-color: var(--color-bg-primary);
 
   height: 100vh;  /* fallback */
-  height: 100svh; /* iOS Safari 15+ */
-  height: 100dvh; /* modern — recalculates as browser chrome shows/hides */
+  height: 100svh; /* small viewport — stable, never recalculates as browser chrome collapses */
 
   /* Component-scoped custom properties — available to all descendants */
   --slide-overlay-gradient: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);

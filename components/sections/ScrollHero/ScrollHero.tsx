@@ -385,7 +385,7 @@ export default function ScrollHero({
       role="region"
       aria-label="Featured work"
       aria-roledescription="carousel"
-      style={{ height: `calc(${resolvedMultiplier} * 100dvh)`, position: 'relative' }}
+      style={{ height: `calc(${resolvedMultiplier} * 100svh)`, position: 'relative' }}
     >
 
       <div ref={stageRef} className={styles.stage}>
