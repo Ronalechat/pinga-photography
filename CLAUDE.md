@@ -41,7 +41,7 @@ No barrel index files. Explicit paths only.
 
 ## Workflow Rules
 
-- Run typecheck after any series of file edits
+- Run typecheck after any series of file edits: `npm run typecheck`
 - Write a test file alongside any new component
 - Never edit files in `packages/tokens` without telling me first
 - Prefer running single tests, not the full suite

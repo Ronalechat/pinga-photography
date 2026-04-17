@@ -25,6 +25,7 @@
 'use client'
 
 import { useState } from 'react'
+import Typography from '@/components/ui/Typography/Typography'
 import PingaButton from '@/components/ui/Button/PingaButton'
 import PingaToggle from '@/components/ui/ToggleButton/PingaToggle'
 import { analytics } from '@/lib/analytics'
