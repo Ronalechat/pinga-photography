@@ -222,9 +222,38 @@ export default function ScrollHero({
 
   }, [count, resolvedTransition])
 
+  // ── First-slide reveal ────────────────────────────────────────────────────
+  // Waits for the first slide's background image to load before revealing it.
+  // Without this, the loading screen disappears but the hero image is still
+  // downloading — the user sees a dark stage, then a sudden snap-in.
+  // Falls back to revealing after 3s so slow connections don't stall forever.
   useEffect(() => {
-    if (slideRefs.current[0]) slideRefs.current[0].style.opacity = '1'
+    const el  = slideRefs.current[0]
+    const src = slides[0]?.src
+    if (!el) return
 
+    if (!src) {
+      el.style.opacity = '1'
+      return
+    }
+
+    let cancelled = false
+    const reveal = () => {
+      if (cancelled) return
+      el.style.transition = 'opacity 0.4s ease'
+      el.style.opacity = '1'
+      setTimeout(() => { if (!cancelled) el.style.transition = '' }, 450)
+    }
+    const fallback = setTimeout(reveal, 3000)
+    const img = new Image()
+    img.onload  = () => { clearTimeout(fallback); reveal() }
+    img.onerror = () => { clearTimeout(fallback); reveal() }
+    img.src = src
+
+    return () => { cancelled = true; clearTimeout(fallback) }
+  }, [slides])
+
+  useEffect(() => {
     const outer = outerRef.current
     if (!outer) return
 
@@ -346,7 +375,7 @@ export default function ScrollHero({
   }, [update])
 
   return (
-    <div ref={outerRef} style={{ height: `${resolvedMultiplier * 100}vh`, position: 'relative' }}>
+    <div ref={outerRef} style={{ height: `calc(${resolvedMultiplier} * 100dvh)`, position: 'relative' }}>
 
       <div ref={stageRef} className={styles.stage}>
 

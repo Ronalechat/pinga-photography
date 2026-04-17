@@ -1,5 +1,6 @@
 .root {
-  height: 100vh;
+  aspect-ratio: 16 / 9;
+  max-height: 80vh;
 }
 
 /* ── Ghost button — resting/hover/active opacity via CSS, zero JS re-renders ── */
@@ -37,9 +38,10 @@
   }
 }
 
+@media (max-width: 1023px) {
+  .root { max-height: none; }
+}
+
 @media (max-width: 767px) {
-  .root {
-    height: auto;
-    aspect-ratio: 3 / 2;
-  }
+  .root { aspect-ratio: 3 / 2; }
 }

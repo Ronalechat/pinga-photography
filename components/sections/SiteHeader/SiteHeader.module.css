@@ -52,7 +52,7 @@
 .name {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: 11px;
+  font-size: var(--font-size-small);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: white;
@@ -71,7 +71,7 @@
 
 .link {
   font-family: var(--font-serif);
-  font-size: 11px;
+  font-size: var(--font-size-small);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: white;
@@ -125,8 +125,8 @@
     gap: 12px;
   }
 
-  /* Slightly smaller type on mobile */
-  .link { font-size: 8px; letter-spacing: 0.18em; }
+  /* Slightly smaller type on mobile — 9px is the accessibility floor */
+  .link { font-size: 9px; letter-spacing: 0.18em; }
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────────── */

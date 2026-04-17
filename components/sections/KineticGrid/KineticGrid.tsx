@@ -73,6 +73,7 @@ function Card({ item, colIndex, color, onClick }: {
     <div
       className={styles.card}
       data-dir={DIRS[colIndex]}
+      data-col={colIndex}
       data-reveal="pending"
       onClick={(e) => { e.preventDefault(); onClick() }}
       style={{
@@ -205,7 +206,6 @@ export default function KineticGrid({
   useEffect(() => {
     const shell = shellRef.current
     if (!shell) return
-    shell.scrollIntoView({ behavior: 'instant' })
 
     let rafId = 0
     let rafPending = false

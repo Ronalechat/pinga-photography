@@ -75,8 +75,7 @@
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  /* rgba(179,179,186,0.65) → ~4.1:1 on #16161D ✓ passes AA large text */
-  color: rgba(179, 179, 186, 0.65);
+  color: var(--color-text-muted-mid);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -124,8 +123,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  /* rgba(179,179,186,0.45) — metadata, not actionable. Intentionally quieter. */
-  color: rgba(179, 179, 186, 0.45);
+  color: var(--color-text-muted-low);
 }
 
 .location {
@@ -143,7 +141,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(179, 179, 186, 0.45);
+  color: var(--color-text-muted-low);
 }
 
 /* ── Mobile (max 767px) ───────────────────────────────────────────────────── */

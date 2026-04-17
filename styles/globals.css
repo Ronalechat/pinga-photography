@@ -38,6 +38,12 @@
   --color-text-dark:       #16161D;
   --color-text-muted:      #B3B3BA;
 
+  /* ── Alpha text variants ─────────────────────────────── */
+  --color-text-muted-high:  rgba(179, 179, 186, 0.75);
+  --color-text-muted-mid:   rgba(179, 179, 186, 0.65);
+  --color-text-muted-low:   rgba(179, 179, 186, 0.45);
+  --color-text-ghost:       rgba(242, 242, 252, 0.60);
+
   /* ── Borders ─────────────────────────────────────────── */
   --color-border-input:    rgba(179,179,186,0.35);
   --color-border-divider:  rgba(242,242,252,0.08);
@@ -68,6 +74,7 @@
   --font-size-display:    56px;
 
   --letter-spacing-tight:  -0.01em;
+  --letter-spacing-normal:  0em;
   --letter-spacing-wide:    0.08em;
   --letter-spacing-wider:   0.14em;
   --letter-spacing-widest:  0.3em;
@@ -150,6 +157,9 @@
 
 html {
   height: 100%;
+  /* Ensures the background colour fills any gap exposed when mobile browser
+     chrome collapses and the viewport expands beyond painted body content. */
+  background-color: var(--color-bg-primary);
 }
 
 html,

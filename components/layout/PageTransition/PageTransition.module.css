@@ -35,6 +35,7 @@
   z-index: 1000;
   pointer-events: none;
   overflow: hidden;
+  --wipe-bg: #2a2a3a;
 }
 
 /* ── Diagonal wipe panel ──────────────────────────────────────────────────── */
@@ -42,7 +43,7 @@
 .diagonalPanel {
   position: absolute;
   inset: 0;
-  background: #2a2a3a;
+  background: var(--wipe-bg);
   /* clip-path animated by Framer Motion */
 }
 
@@ -52,7 +53,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #2a2a3a;
+  background: var(--wipe-bg);
   /* left, width, transform animated per-strip in component */
 }
 
