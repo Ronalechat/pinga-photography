@@ -103,7 +103,7 @@ export default function EnquiryForm({
       const res = await fetch('/api/enquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, occasions: occasions.join(', '), date, message }),
+        body: JSON.stringify({ name, email, phone, occasions, date, message }),
       })
 
       setFirstName(name.split(' ')[0])
