@@ -132,6 +132,20 @@
   text-align: right;
 }
 
+.barLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.credit {
+  font-family: var(--font-serif);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(179, 179, 186, 0.45);
+}
+
 /* ── Mobile (max 767px) ───────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {

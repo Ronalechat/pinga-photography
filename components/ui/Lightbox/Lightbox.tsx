@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { COLOR, DURATION, EASING, RADIUS, SPACE } from '@tokens'
 import Typography from '@/components/ui/Typography/Typography'
+import { analytics } from '@/lib/analytics'
 import utilStyles from '@/styles/utility.module.css'
 import styles from './Lightbox.module.css'
 
@@ -49,6 +50,17 @@ export default function Lightbox({
   const color     = colors[item.cat] ?? COLOR.bgSurface
   const thumbsRef = useRef<HTMLDivElement>(null)
 
+  // Wrap navigation and close so we can track before delegating to props
+  const navigate = useCallback((dir: 'prev' | 'next') => {
+    analytics.track('Lightbox Navigated', { direction: dir, category: item.cat, imageNum: item.num })
+    onNavigate(dir)
+  }, [item.cat, item.num, onNavigate])
+
+  const close = useCallback(() => {
+    analytics.track('Lightbox Closed', { category: item.cat, imageNum: item.num })
+    onClose()
+  }, [item.cat, item.num, onClose])
+
   // Keep the active thumbnail visible in the strip without scrolling the page
   useEffect(() => {
     const strip = thumbsRef.current
@@ -68,13 +80,13 @@ export default function Lightbox({
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') onNavigate('next')
-      if (e.key === 'ArrowLeft')  onNavigate('prev')
-      if (e.key === 'Escape')     onClose()
+      if (e.key === 'ArrowRight') navigate('next')
+      if (e.key === 'ArrowLeft')  navigate('prev')
+      if (e.key === 'Escape')     close()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onNavigate, onClose])
+  }, [navigate, close])
 
   const touchStart = useRef({ x: 0, y: 0 })
 
@@ -85,7 +97,7 @@ export default function Lightbox({
       onTouchEnd={e => {
         const dx = e.changedTouches[0].clientX - touchStart.current.x
         const dy = e.changedTouches[0].clientY - touchStart.current.y
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) onNavigate(dx < 0 ? 'next' : 'prev')
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) navigate(dx < 0 ? 'next' : 'prev')
       }}
     >
       {/* Top bar */}
@@ -94,7 +106,7 @@ export default function Lightbox({
         <button
           className={styles.closeBtn}
           aria-label="Close lightbox"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose() }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); close() }}
         >✕</button>
       </div>
 
@@ -115,6 +127,16 @@ export default function Lightbox({
             <Typography variant="eyebrow" color="rgba(179,179,186,0.12)" style={{ fontSize: '40px' }}>{item.num}</Typography>
           </div>
         )}
+
+        {/* Click zones — left half prev, right half next */}
+        <div
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('prev') }}
+          style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', zIndex: 10, cursor: 'w-resize' }}
+        />
+        <div
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('next') }}
+          style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', zIndex: 10, cursor: 'e-resize' }}
+        />
       </div>
 
       {/* Nav buttons */}
@@ -123,7 +145,7 @@ export default function Lightbox({
           <button
             key={dir}
             className={styles.navBtn}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(dir) }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(dir) }}
           >
             {dir === 'prev' ? '←' : '→'}
           </button>

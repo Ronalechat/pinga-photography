@@ -27,6 +27,7 @@
 import { useState } from 'react'
 import PingaButton from '@/components/ui/Button/PingaButton'
 import PingaToggle from '@/components/ui/ToggleButton/PingaToggle'
+import { analytics } from '@/lib/analytics'
 import styles from './EnquiryForm.module.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -92,6 +93,7 @@ export default function EnquiryForm({
     const errs = validate()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
+      analytics.track('Enquiry Submit Failed', { reason: 'validation' })
       return
     }
     setErrors({})
@@ -105,8 +107,15 @@ export default function EnquiryForm({
       })
 
       setFirstName(name.split(' ')[0])
-      setStatus(res.ok ? 'sent' : 'error')
+      if (res.ok) {
+        analytics.track('Enquiry Submitted')
+        setStatus('sent')
+      } else {
+        analytics.track('Enquiry Submit Failed', { reason: 'server' })
+        setStatus('error')
+      }
     } catch {
+      analytics.track('Enquiry Submit Failed', { reason: 'server' })
       setStatus('error')
     }
   }

@@ -38,6 +38,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCallback } from 'react'
+import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
@@ -62,13 +63,15 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
 
   /**
-   * Enquire scroll intercept.
-   * On / scroll to #enquire. On other pages navigate to /#enquire.
+   * Nav click handler for all links.
+   * Tracks the click, then handles enquire scroll intercept on homepage.
    */
-  const handleEnquire = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (pathname === '/') {
+  const handleNavClick = useCallback((item: typeof NAV_LINKS[number]) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const scrolled = 'scrollId' in item && pathname === '/'
+    analytics.track('Header Nav Clicked', { label: item.label, destination: item.href, scrolled })
+    if (scrolled) {
       e.preventDefault()
-      document.getElementById('enquire')?.scrollIntoView({ behavior: 'smooth' })
+      document.getElementById(item.scrollId)?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [pathname])
 
@@ -88,6 +91,7 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
           href="/"
           className={styles.name}
           aria-label={`${name} — home`}
+          onClick={() => analytics.track('Header Nav Clicked', { label: 'Home', destination: '/', scrolled: false })}
         >
           {name}
         </Link>
@@ -103,7 +107,7 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
                 href={item.href}
                 className={styles.link}
                 aria-current={pathname === item.href ? 'page' : undefined}
-                onClick={'scrollId' in item ? handleEnquire : undefined}
+                onClick={handleNavClick(item)}
               >
                 {item.label}
               </Link>

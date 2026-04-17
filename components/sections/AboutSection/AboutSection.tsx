@@ -147,6 +147,8 @@ export default function AboutSection({ blok }: { blok: AboutSectionBlok }) {
               sizes="(max-width: 767px) 100vw, 33vw"
               className={styles.photo}
               priority
+              onContextMenu={(e) => e.preventDefault()}
+              draggable={false}
             />
           )}
         </div>

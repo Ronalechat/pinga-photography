@@ -125,6 +125,8 @@ export default function AboutPreview({ blok }: { blok: AboutPreviewBlok }) {
                 sizes="(max-width: 767px) 33vw, 17vw"
                 className={styles.tileImage}
                 priority
+                onContextMenu={(e) => e.preventDefault()}
+                draggable={false}
               />
             )}
           </div>

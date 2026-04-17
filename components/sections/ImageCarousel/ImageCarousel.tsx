@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { COLOR, FONT, FONT_SIZE, LETTER_SPACING, SPACE, DURATION } from '@tokens'
+import { analytics } from '@/lib/analytics'
 import styles from './ImageCarousel.module.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ function CarouselViewer({
 
   return (
     <div
+      className={styles.viewer}
       style={{ flex: 1, position: 'relative', overflow: 'hidden' }}
       onTouchStart={e => {
         touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
@@ -66,6 +68,7 @@ function CarouselViewer({
       {slides.map((slide, i) => (
         <div
           key={i}
+          className={i === current ? styles.slide : styles.slideHidden}
           style={{
             position: 'absolute',
             inset: 0,
@@ -243,8 +246,8 @@ export default function ImageCarousel({ slides, height }: ImageCarouselProps) {
     setCurrent(((i % count) + count) % count)
   }, [count])
 
-  const prev = useCallback(() => goTo(current - 1), [current, goTo])
-  const next = useCallback(() => goTo(current + 1), [current, goTo])
+  const prev = useCallback(() => { analytics.track('Carousel Navigated', { direction: 'prev' }); goTo(current - 1) }, [current, goTo])
+  const next = useCallback(() => { analytics.track('Carousel Navigated', { direction: 'next' }); goTo(current + 1) }, [current, goTo])
 
   // Keyboard navigation
   useEffect(() => {

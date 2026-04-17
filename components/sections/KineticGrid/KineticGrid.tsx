@@ -6,6 +6,7 @@ import { COLOR, DURATION, EASING } from '@tokens'
 import PingaToggle from '@/components/ui/ToggleButton/PingaToggle'
 import Typography from '@/components/ui/Typography/Typography'
 import Lightbox from '@/components/ui/Lightbox/Lightbox'
+import { analytics } from '@/lib/analytics'
 import utilStyles from '@/styles/utility.module.css'
 import styles from './KineticGrid.module.css'
 
@@ -279,7 +280,10 @@ export default function KineticGrid({
           <PingaToggle
             options={['all', ...catNames]}
             selected={activeFilter}
-            onChange={(v) => setActiveFilter(v as string)}
+            onChange={(v) => {
+              analytics.track('Gallery Filter Changed', { filter: v })
+              setActiveFilter(v as string)
+            }}
             variant="primary"
           />
         </div>
@@ -297,7 +301,10 @@ export default function KineticGrid({
                   item={item}
                   colIndex={colIdx % 3}
                   color={categoryColors[item.cat] ?? COLOR.bgSurface}
-                  onClick={() => setLightbox({ list: activeList, index: rowIdx * colCount + colIdx })}
+                  onClick={() => {
+                    analytics.track('Lightbox Opened', { category: item.cat, imageNum: item.num })
+                    setLightbox({ list: activeList, index: rowIdx * colCount + colIdx })
+                  }}
                 />
               ))}
             </div>

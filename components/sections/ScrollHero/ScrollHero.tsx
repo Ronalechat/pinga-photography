@@ -4,6 +4,7 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { COLOR } from '@tokens'
 import Typography from '@/components/ui/Typography/Typography'
+import { analytics } from '@/lib/analytics'
 import styles from './ScrollHero.module.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -356,7 +357,10 @@ export default function ScrollHero({
             ref={el => { slideRefs.current[i] = el }}
             className={styles.slide}
             aria-label={slide.alt ?? slide.label}
-            onClick={slide.href ? () => router.push(slide.href!) : undefined}
+            onClick={slide.href ? () => {
+              analytics.track('Hero Slide Clicked', { href: slide.href!, slideIndex: i })
+              router.push(slide.href!)
+            } : undefined}
             style={{
               opacity: 0,
               cursor:  slide.href ? 'pointer' : undefined,

@@ -36,6 +36,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCallback } from 'react'
 import { storyblokEditable, type SbBlokData } from '@storyblok/react'
+import { analytics } from '@/lib/analytics'
 import styles from './SiteFooter.module.css'
 
 // ─── Storyblok blok type ──────────────────────────────────────────────────────
@@ -100,6 +101,7 @@ export default function SiteFooter({
             rel="noopener noreferrer"
             className={styles.link}
             aria-label="Instagram (opens in new tab)"
+            onClick={() => analytics.track('Instagram Link Clicked')}
           >
             {/*
              * Arrow span — CSS order swaps it:
@@ -124,9 +126,12 @@ export default function SiteFooter({
       {/* ── Rule ── */}
       <div className={styles.rule} role="separator" />
 
-      {/* ── Bar: copyright left · location right ── */}
+      {/* ── Bar: copyright + credit left · location right ── */}
       <div className={styles.bar}>
-        <span className={styles.copy}>© {year}</span>
+        <div className={styles.barLeft}>
+          <span className={styles.copy}>© {year}</span>
+          <span className={styles.credit}>Website designed and assembled by Michael Z Lin</span>
+        </div>
         <span className={styles.location}>{location}</span>
       </div>
 

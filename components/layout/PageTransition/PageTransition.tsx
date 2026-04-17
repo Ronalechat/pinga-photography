@@ -27,8 +27,8 @@
  *   liftSlide    — fade out left/up, new page lifts in from below.
  *                  Pure Framer Motion variants, no overlay.
  *
- *   diagonalWipe — #2a2a3a panel sweeps left→right with a diagonal edge,
- *                  then off screen. Covers the page switch moment.
+ *   diagonalWipe — #2a2a3a panel sweeps off-screen with a diagonal edge,
+ *                  revealing the new page beneath.
  *
  *   stripReveal  — five vertical strips slide upward with stagger,
  *                  revealing the new page beneath. Shares visual language
@@ -38,14 +38,18 @@
  *   #2a2a3a — slightly lifted from the page background. Enough contrast
  *   to register without jarring. Uses no white — no flash-bang effect.
  *
+ * FLASH FIX
+ *   The overlay uses useLayoutEffect to cover the screen synchronously
+ *   before the browser paints the new page content. useEffect (which fires
+ *   after paint) was the source of the "new page flashes in for a few frames"
+ *   bug — the panel started too late. useLayoutEffect fires before the paint,
+ *   so the screen is already covered when the new route first renders.
+ *   useEffect + rAF then animates the panel off.
+ *
  * APP ROUTER NOTES
  *   usePathname() is the key for AnimatePresence — changing it triggers
  *   the exit/enter cycle. mode="wait" ensures exit completes before enter
- *   begins, giving the overlay time to play.
- *
- *   For diagonalWipe and stripReveal, the overlay is a fixed-position
- *   element that animates independently of AnimatePresence. It plays
- *   on every pathname change, covering the transition moment.
+ *   begins.
  *
  * SCROLL
  *   App Router scrolls to top on navigation by default. The transition
@@ -55,8 +59,9 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { AnimatePresence, motion, useAnimate } from 'framer-motion'
-import { useEffect, useRef } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { analytics } from '@/lib/analytics'
 import styles from './PageTransition.module.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -70,10 +75,8 @@ export interface PageTransitionProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const WIPE_COLOUR  = '#2a2a3a'
 const STRIP_COUNT  = 5
-const EASING_SHARP = [0.76, 0, 0.24, 1] as const
-const EASING_ENTER = [0.22, 1, 0.36, 1] as const
+const EASING_SHARP = 'cubic-bezier(0.76, 0, 0.24, 1)'
 
 // ─── Framer Motion variants — liftSlide ──────────────────────────────────────
 
@@ -87,7 +90,7 @@ const liftSlideVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: EASING_ENTER,
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
   exit: {
@@ -115,44 +118,55 @@ const overlayPageVariants = {
   },
 }
 
-// ─── DiagonalWipe overlay ─────────────────────────────────────────────────────
+// ─── DiagonalWipeOverlay ──────────────────────────────────────────────────────
 
 function DiagonalWipeOverlay({ trigger }: { trigger: number }) {
-  const [scope, animate] = useAnimate()
+  const panelRef = useRef<HTMLDivElement>(null)
 
+  // Cover the screen synchronously before the browser paints new page content.
+  // This runs before paint — no frames where new content is visible unmasked.
+  useLayoutEffect(() => {
+    if (trigger === 0) return
+    const panel = panelRef.current
+    if (!panel) return
+    panel.style.transition = 'none'
+    panel.style.clipPath   = 'polygon(0 0, 110% 0, 100% 100%, 0 100%)'
+  }, [trigger])
+
+  // Animate the panel off-screen to reveal the new page.
+  // rAF ensures the covered frame has been painted before the transition starts.
   useEffect(() => {
     if (trigger === 0) return
+    const panel = panelRef.current
+    if (!panel) return
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReduced) return
-
-    async function play() {
-      // Panel sweeps in from left with diagonal trailing edge
-      await animate(
-        scope.current,
-        { clipPath: 'polygon(0 0, 110% 0, 100% 100%, 0 100%)' },
-        { duration: 0.34, ease: EASING_SHARP }
-      )
-      // Panel sweeps off to the right — reveals new page
-      await animate(
-        scope.current,
-        { clipPath: 'polygon(110% 0, 110% 0, 100% 100%, 110% 100%)' },
-        { duration: 0.34, ease: EASING_SHARP }
-      )
-      // Reset for next transition
-      animate(
-        scope.current,
-        { clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' },
-        { duration: 0 }
-      )
+    if (prefersReduced) {
+      panel.style.transition = 'none'
+      panel.style.clipPath   = 'polygon(0 0, 0 0, 0 100%, 0 100%)'
+      return
     }
-    play()
-  }, [trigger, animate, scope])
+
+    const rafId = requestAnimationFrame(() => {
+      panel.style.transition = `clip-path 0.34s ${EASING_SHARP}`
+      panel.style.clipPath   = 'polygon(110% 0, 110% 0, 100% 100%, 110% 100%)'
+    })
+
+    const resetId = setTimeout(() => {
+      panel.style.transition = 'none'
+      panel.style.clipPath   = 'polygon(0 0, 0 0, 0 100%, 0 100%)'
+    }, 340 + 50)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      clearTimeout(resetId)
+    }
+  }, [trigger])
 
   return (
     <div className={styles.overlay}>
       <div
-        ref={scope}
+        ref={panelRef}
         className={styles.diagonalPanel}
         style={{ clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
       />
@@ -160,45 +174,55 @@ function DiagonalWipeOverlay({ trigger }: { trigger: number }) {
   )
 }
 
-// ─── StripReveal overlay ──────────────────────────────────────────────────────
+// ─── StripRevealOverlay ───────────────────────────────────────────────────────
 
 function StripRevealOverlay({ trigger }: { trigger: number }) {
-  const stripRefs = useRef<(HTMLDivElement | null)[]>([])
-  const [scope, animate] = useAnimate()
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const stripRefs  = useRef<(HTMLDivElement | null)[]>([])
 
+  // Reset all strips to covering position synchronously before paint.
+  useLayoutEffect(() => {
+    if (trigger === 0) return
+    const strips = stripRefs.current.filter(Boolean) as HTMLDivElement[]
+    strips.forEach(s => {
+      s.style.transition = 'none'
+      s.style.transform  = 'translateY(0)'
+    })
+    // Force reflow so reset registers before the transition is applied
+    void overlayRef.current?.offsetHeight
+  }, [trigger])
+
+  // Animate strips upward to reveal the new page.
   useEffect(() => {
     if (trigger === 0) return
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReduced) return
 
-    function play() {
+    const timerIds: ReturnType<typeof setTimeout>[] = []
+    const staggerMs  = 55
+    const durationMs = 420
+
+    const rafId = requestAnimationFrame(() => {
       const strips = stripRefs.current.filter(Boolean) as HTMLDivElement[]
-
-      // Reset all strips to starting position
-      strips.forEach(s => { s.style.transform = 'translateY(0)'; s.style.transition = 'none' })
-      void scope.current?.offsetHeight
-
-      // Stagger each strip sliding upward
-      const staggerMs = 55
-      const durationMs = 420
-
       strips.forEach((s, i) => {
         timerIds.push(setTimeout(() => {
-          s.style.transition = `transform ${durationMs}ms cubic-bezier(0.76, 0, 0.24, 1)`
-          s.style.transform = 'translateY(-101%)'
+          s.style.transition = `transform ${durationMs}ms ${EASING_SHARP}`
+          s.style.transform  = 'translateY(-101%)'
         }, i * staggerMs))
       })
+    })
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      timerIds.forEach(id => clearTimeout(id))
     }
-    const timerIds: ReturnType<typeof setTimeout>[] = []
-    play()
-    return () => { timerIds.forEach(id => clearTimeout(id)) }
-  }, [trigger, animate, scope])
+  }, [trigger])
 
   const strips = Array.from({ length: STRIP_COUNT }, (_, i) => i)
 
   return (
-    <div className={styles.overlay} ref={scope}>
+    <div className={styles.overlay} ref={overlayRef}>
       {strips.map(i => (
         <div
           key={i}
@@ -227,9 +251,14 @@ export default function PageTransition({
 
   // Increment trigger on every route change (overlay transitions only)
   if (pathname !== prevPathRef.current) {
-    prevPathRef.current  = pathname
+    prevPathRef.current       = pathname
     overlayTriggerRef.current += 1
   }
+
+  // Fire page view on every route change
+  useEffect(() => {
+    analytics.page()
+  }, [pathname])
 
   const overlayTrigger = overlayTriggerRef.current
   const isLiftSlide    = variant === 'liftSlide'
@@ -248,8 +277,6 @@ export default function PageTransition({
       {/*
        * AnimatePresence with pathname as key.
        * mode="wait" — exit animation completes before enter begins.
-       * This gives the overlay time to start its sweep before the
-       * new page content appears.
        */}
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
