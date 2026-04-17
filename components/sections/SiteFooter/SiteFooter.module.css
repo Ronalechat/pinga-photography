@@ -27,7 +27,6 @@
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 
 .root {
-  background-color: var(--color-bg-primary);
   padding: 64px 40px 32px;
 }
 

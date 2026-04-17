@@ -30,7 +30,6 @@
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 
 .root {
-  background-color: var(--color-bg-primary);
   padding: 72px 0 80px;
   display: grid;
   grid-template-columns: 1fr 1fr;

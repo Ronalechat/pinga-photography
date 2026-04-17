@@ -18,7 +18,6 @@
 
 .shell {
   position: relative;
-  background-color: var(--color-bg-primary);
   /* Component-scoped custom properties — available to all descendants */
   --grid-bottom-padding: 80px;
   --card-meta-gradient: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 100%);

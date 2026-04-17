@@ -159,7 +159,7 @@ body {
 }
 
 body {
-  min-height: 100dvh;
+  min-height: 100svh;
   overscroll-behavior-y: none;
   /*
    * isolation: isolate makes body a stacking context so body::before at
@@ -188,6 +188,12 @@ body {
     content: '';
     position: fixed;
     inset: 0;
+    /*
+     * background-color is a failsafe: if mix-blend-mode fails or has nothing
+     * to blend with (rubber-band overscroll zone), the element shows as solid
+     * dark rather than raw SVG turbulence at full intensity.
+     */
+    background-color: var(--color-bg-primary);
     background-image: var(--bg-noise);
     background-size: 256px 256px;
     mix-blend-mode: overlay;
