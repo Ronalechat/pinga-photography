@@ -157,30 +157,20 @@ export default function KineticGrid({
   const [lightbox, setLightbox] = useState<{ list: PhotoConfig[]; index: number } | null>(null)
   const shellRef = useRef<HTMLDivElement>(null)
 
-  // Named categories in insertion order, with Uncategorised always last
+  // Named categories only — Uncategorised is never shown as a filter tab
   const namedCats = catNames.filter(k => k !== UNCATEGORISED)
-  const filterOptions = [
-    'all',
-    ...namedCats,
-    ...(catNames.includes(UNCATEGORISED) ? [UNCATEGORISED] : []),
-  ]
+  const filterOptions = ['all', ...namedCats]
 
-  // "All" preview: interleave up to allPreviewCount items per category
-  const allItems: PhotoConfig[] = []
-  for (let i = 0; i < allPreviewCount; i++) {
-    filterOptions.slice(1).forEach(cat => { if (categories[cat]?.[i]) allItems.push(categories[cat][i]) })
-  }
-
-  // showAllPhotos: every photo, named categories first, Uncategorised last
-  const allPhotosFlat: PhotoConfig[] = showAllPhotos ? [
+  // All photos flat: named categories first, uncategorised appended (appears in "all" view)
+  const allPhotosFlat: PhotoConfig[] = [
     ...namedCats.flatMap(cat => categories[cat] ?? []),
     ...(categories[UNCATEGORISED] ?? []),
-  ] : []
+  ]
 
   const activeList = showAllPhotos
     ? allPhotosFlat
     : activeFilter === 'all'
-    ? allItems
+    ? allPhotosFlat
     : (categories[activeFilter] ?? [])
 
   // Cache the prefers-reduced-motion value — querying matchMedia per frame (or per scroll
