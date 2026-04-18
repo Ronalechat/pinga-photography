@@ -84,7 +84,7 @@ export default function EnquiryForm({
       e.phone = 'Phone may only contain digits, spaces, and + - ( ).'
     }
     if (!date.trim()) {
-      e.date = 'Please let us know when you\'re thinking.'
+      e.date = 'Please include a date or timeframe.'
     }
     return e
   }
@@ -150,7 +150,7 @@ export default function EnquiryForm({
             Let&apos;s work<br />together
           </Typography>
           <Typography variant="body" as="p" className={styles.sub}>
-            Tell me about the moment you want captured. P!nga will get back to you shortly.
+            Tell me about the moment you want captured. I will get back to you shortly.
           </Typography>
         </div>
 
@@ -241,7 +241,7 @@ export default function EnquiryForm({
 
             {/* Date */}
             <div className={styles.field}>
-              <label htmlFor="ef-date" className={styles.fieldLabel}>When are you thinking?</label>
+              <label htmlFor="ef-date" className={styles.fieldLabel}>Date</label>
               <input
                 id="ef-date"
                 name="date"
