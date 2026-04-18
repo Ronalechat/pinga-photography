@@ -38,6 +38,8 @@ export interface KineticGridProps {
   eyebrow?: string
   /** Pre-select a category filter on mount (e.g. from ?category= query param) */
   defaultCategory?: string
+  /** When true, hides filter tabs and shows all photos without the allPreviewCount cap. Uncategorised photos appear last. */
+  showAllPhotos?: boolean
 }
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -49,6 +51,8 @@ const DEFAULT_COLORS: Record<string, string> = {
   'New Beginnings': '#4a3a10',
   'Exhibition':     '#1a2a5c',
 }
+
+const UNCATEGORISED = 'Uncategorised'
 
 const DIRS    = ['left', 'top', 'right'] as const
 const STAGGER = [60, 0, 120]
@@ -63,12 +67,14 @@ function ratioLabel([w, h]: [number, number]): string {
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
-function Card({ item, colIndex, color, onClick }: {
+function Card({ item, colIndex, color, onClick, cardIndex }: {
   item: PhotoConfig
   colIndex: number
   color: string
   onClick: () => void
+  cardIndex: number
 }) {
+  const isEager = cardIndex < 3
   return (
     <div
       className={styles.card}
@@ -85,17 +91,34 @@ function Card({ item, colIndex, color, onClick }: {
         willChange: 'opacity, transform',
       }}
     >
-      {/* Real image or aspect ratio sizer */}
+      {/* Real image — skeleton fades out as image fades in */}
       {item.src ? (
-        <img
-          src={item.src}
-          alt={`${item.cat} ${item.num}`}
-          className={utilStyles.imgBlock}
-          loading="lazy"
-          decoding="async"
-          onContextMenu={(e) => e.preventDefault()}
-          draggable={false}
-        />
+        <>
+          <div className={styles.skeleton} aria-hidden="true" />
+          <img
+            src={item.src}
+            alt={`${item.cat} ${item.num}`}
+            className={utilStyles.imgBlock}
+            loading={isEager ? 'eager' : 'lazy'}
+            fetchPriority={cardIndex === 0 ? 'high' : undefined}
+            decoding={isEager ? 'sync' : 'async'}
+            style={{ opacity: 0, transition: `opacity ${DURATION.standard} ease` }}
+            onLoad={(e) => {
+              e.currentTarget.style.opacity = '1'
+              const skeleton = e.currentTarget.previousElementSibling as HTMLElement | null
+              if (skeleton) skeleton.style.opacity = '0'
+            }}
+            ref={(el) => {
+              if (el?.complete) {
+                el.style.opacity = '1'
+                const skeleton = el.previousElementSibling as HTMLElement | null
+                if (skeleton) skeleton.style.opacity = '0'
+              }
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+            draggable={false}
+          />
+        </>
       ) : (
         <div style={{ paddingTop: ratioPct(item.ratio) }} />
       )}
@@ -111,7 +134,9 @@ function Card({ item, colIndex, color, onClick }: {
 
       {/* Hover meta bar — resting state and hover reveal both in KineticGrid.module.css */}
       <div className={styles.cardMeta}>
-        <Typography variant="meta" color={COLOR.textPrimary}>{item.cat}</Typography>
+        <Typography variant="meta" color={COLOR.textPrimary}>
+          {item.cat === UNCATEGORISED ? '' : item.cat}
+        </Typography>
       </div>
     </div>
   )
@@ -125,18 +150,38 @@ export default function KineticGrid({
   categoryColors  = DEFAULT_COLORS,
   eyebrow         = 'Selected Work',
   defaultCategory,
+  showAllPhotos   = false,
 }: KineticGridProps) {
   const catNames = Object.keys(categories)
   const [activeFilter, setActiveFilter] = useState(defaultCategory ?? 'all')
   const [lightbox, setLightbox] = useState<{ list: PhotoConfig[]; index: number } | null>(null)
   const shellRef = useRef<HTMLDivElement>(null)
 
+  // Named categories in insertion order, with Uncategorised always last
+  const namedCats = catNames.filter(k => k !== UNCATEGORISED)
+  const filterOptions = [
+    'all',
+    ...namedCats,
+    ...(catNames.includes(UNCATEGORISED) ? [UNCATEGORISED] : []),
+  ]
+
+  // "All" preview: interleave up to allPreviewCount items per category
   const allItems: PhotoConfig[] = []
   for (let i = 0; i < allPreviewCount; i++) {
-    catNames.forEach(cat => { if (categories[cat][i]) allItems.push(categories[cat][i]) })
+    filterOptions.slice(1).forEach(cat => { if (categories[cat]?.[i]) allItems.push(categories[cat][i]) })
   }
 
-  const activeList = activeFilter === 'all' ? allItems : (categories[activeFilter] ?? [])
+  // showAllPhotos: every photo, named categories first, Uncategorised last
+  const allPhotosFlat: PhotoConfig[] = showAllPhotos ? [
+    ...namedCats.flatMap(cat => categories[cat] ?? []),
+    ...(categories[UNCATEGORISED] ?? []),
+  ] : []
+
+  const activeList = showAllPhotos
+    ? allPhotosFlat
+    : activeFilter === 'all'
+    ? allItems
+    : (categories[activeFilter] ?? [])
 
   // Cache the prefers-reduced-motion value — querying matchMedia per frame (or per scroll
   // event) creates a new MQL object each time. One cached ref + a change listener is enough.
@@ -275,18 +320,20 @@ export default function KineticGrid({
           </Typography>
         </div>
 
-        {/* Filters */}
-        <div className={styles.filters}>
-          <PingaToggle
-            options={['all', ...catNames]}
-            selected={activeFilter}
-            onChange={(v) => {
-              analytics.track('Gallery Filter Changed', { filter: v })
-              setActiveFilter(v as string)
-            }}
-            variant="primary"
-          />
-        </div>
+        {/* Filters — hidden when showAllPhotos */}
+        {!showAllPhotos && (
+          <div className={styles.filters}>
+            <PingaToggle
+              options={filterOptions}
+              selected={activeFilter}
+              onChange={(v) => {
+                analytics.track('Gallery Filter Changed', { filter: v })
+                setActiveFilter(v as string)
+              }}
+              variant="primary"
+            />
+          </div>
+        )}
 
         {/* Grid */}
         <div
@@ -301,6 +348,7 @@ export default function KineticGrid({
                   item={item}
                   colIndex={colIdx % 3}
                   color={categoryColors[item.cat] ?? COLOR.bgSurface}
+                  cardIndex={rowIdx * colCount + colIdx}
                   onClick={() => {
                     analytics.track('Lightbox Opened', { category: item.cat, imageNum: item.num })
                     setLightbox({ list: activeList, index: rowIdx * colCount + colIdx })

@@ -28,6 +28,12 @@ export interface LightboxProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+const UNCATEGORISED = 'Uncategorised'
+
+function displayCat(cat: string): string {
+  return cat === UNCATEGORISED ? '' : cat
+}
+
 function ratioLabel([w, h]: [number, number]): string {
   return `${w}:${h}`
 }
@@ -102,7 +108,7 @@ export default function Lightbox({
     >
       {/* Top bar */}
       <div className={styles.topBar}>
-        <Typography variant="eyebrow">{item.cat}</Typography>
+        <Typography variant="eyebrow">{displayCat(item.cat)}</Typography>
         <button
           className={styles.closeBtn}
           aria-label="Close lightbox"
@@ -122,7 +128,7 @@ export default function Lightbox({
           />
         ) : (
           <div className={styles.placeholder} style={{ background: color }}>
-            <Typography variant="label">{item.cat}</Typography>
+            {displayCat(item.cat) && <Typography variant="label">{displayCat(item.cat)}</Typography>}
             <Typography variant="eyebrow" color="rgba(179,179,186,0.25)">{ratioLabel(item.ratio)}</Typography>
             <Typography variant="eyebrow" color="rgba(179,179,186,0.12)" style={{ fontSize: '40px' }}>{item.num}</Typography>
           </div>

@@ -75,6 +75,32 @@
   /* opacity and transform set inline (reveal animation state) */
 }
 
+/* ── Card image skeleton (shimmer shown while src image loads) ───────────── */
+
+.skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-surface) 0%,
+    rgba(60, 60, 145, 0.12) 50%,
+    var(--color-bg-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s infinite;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+@keyframes skeletonShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
 /* ── Card placeholder (removed once real images are wired in) ────────────── */
 
 .placeholderContent {

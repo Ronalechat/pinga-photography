@@ -10,16 +10,17 @@ interface SbAsset {
 
 interface KineticGridPhotoBlok extends SbBlokData {
   image: SbAsset
-  category: string
-  ratio_w: number | ''
-  ratio_h: number | ''
-  num: string
+  category?: string
+  ratio_w?: number | ''
+  ratio_h?: number | ''
+  num?: string
 }
 
 interface KineticGridBlokShape extends SbBlokData {
   photos: KineticGridPhotoBlok[]
   all_preview_count: number | ''
   eyebrow: string
+  show_all_photos?: boolean
 }
 
 export default function KineticGridBlok({
@@ -32,8 +33,7 @@ export default function KineticGridBlok({
   const categories: Record<string, PhotoConfig[]> = {}
 
   for (const p of blok.photos ?? []) {
-    const cat = p.category?.trim()
-    if (!cat) continue
+    const cat = p.category?.trim() || 'Uncategorised'
 
     if (!categories[cat]) categories[cat] = []
 
@@ -56,6 +56,7 @@ export default function KineticGridBlok({
         allPreviewCount={blok.all_preview_count || undefined}
         eyebrow={blok.eyebrow || undefined}
         defaultCategory={resolvedDefault}
+        showAllPhotos={blok.show_all_photos}
       />
     </section>
   )
