@@ -99,7 +99,7 @@ export default function AboutPreview({ blok }: { blok: AboutPreviewBlok }) {
   }, [])
 
   const paragraphs = blok.body
-    .split(/\n\n+/)
+    .split(/\n+/)
     .map(p => p.trim())
     .filter(Boolean)
 

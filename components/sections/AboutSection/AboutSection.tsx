@@ -117,7 +117,7 @@ export default function AboutSection({ blok }: { blok: AboutSectionBlok }) {
   }, [reveal])
 
   const paragraphs = blok.body
-    .split(/\n\n+/)
+    .split(/\n+/)
     .map(p => p.trim())
     .filter(Boolean)
 
