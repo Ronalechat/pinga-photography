@@ -141,16 +141,13 @@ export async function POST(req: NextRequest) {
   const size = sanitize(body.size)
   const quantity = String(Number(body.quantity))
   const submittedAt = new Date().toISOString()
+  const safeProduct = escapeHtml(productName)
+  const safeName = escapeHtml(name)
+  const safeEmail = escapeHtml(email)
+  const safeSize = escapeHtml(size)
+  const safeQuantity = escapeHtml(quantity)
 
   try {
-    await appendToSheet([submittedAt, productName, name, email, size, quantity])
-
-    const safeProduct = escapeHtml(productName)
-    const safeName = escapeHtml(name)
-    const safeEmail = escapeHtml(email)
-    const safeSize = escapeHtml(size)
-    const safeQuantity = escapeHtml(quantity)
-
     await resend.emails.send({
       from: process.env.SENDER_EMAIL as string,
       to: process.env.RECIPIENT_EMAIL as string,
@@ -171,10 +168,16 @@ export async function POST(req: NextRequest) {
         </table>
       `,
     })
-
-    return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('[shop-enquiry] submission failed', err)
+    console.error('[shop-enquiry] email send failed', err)
     return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
   }
+
+  try {
+    await appendToSheet([submittedAt, productName, name, email, size, quantity])
+  } catch (err) {
+    console.error('[shop-enquiry] sheet append failed', err)
+  }
+
+  return NextResponse.json({ ok: true })
 }
