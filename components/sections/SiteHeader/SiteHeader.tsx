@@ -1,7 +1,7 @@
 /**
  * SiteHeader.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Site-wide fixed header — stacked-left cluster with colour-reactive text.
+ * Site-wide fixed header — name left, nav right, colour-reactive text.
  *
  * Stack: Next.js App Router · CSS Modules · Storyblok
  *
@@ -16,8 +16,12 @@
  * the element behind the header.
  *
  * LAYOUT
- * Desktop: stacked — name above, links below (Option D).
- * Mobile:  single row — name left, links right.
+ * Desktop/mobile: single row — name left, four nav links right.
+ *
+ * MOBILE CHROME
+ * Some real mobile Chrome viewports can report a visual viewport top offset
+ * while the browser chrome is visible/collapsing. We mirror that offset into a
+ * CSS variable so the fixed header stays inside the visible viewport.
  *
  * ACTIVE STATE
  * Uses Next.js usePathname to apply aria-current="page" to the active link.
@@ -29,24 +33,24 @@
  * rather than navigating. On other pages it navigates to /enquiry.
  *
  * STORYBLOK
- * The nav links are hardcoded since this is a two-link site. If the nav
- * grows, replace NAV_LINKS with a Storyblok datasource fetch.
+ * The nav links are hardcoded because they are global information architecture,
+ * not editable page content. If the nav grows substantially, replace NAV_LINKS
+ * with a Storyblok datasource fetch.
  */
 
 'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
-// With only two links, hardcoding is simpler than a CMS datasource.
-// Extend this array if the nav grows.
-
 const NAV_LINKS = [
   { label: 'Gallery', href: '/gallery' },
+  { label: 'Exhibits', href: '/exhibits' },
+  { label: 'Shop', href: '/shop' },
   { label: 'Enquire', href: '/enquiry', scrollId: 'enquire' },
 ] as const
 
@@ -61,6 +65,27 @@ export interface SiteHeaderProps {
 
 export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+
+    const syncViewportOffset = () => {
+      const offsetTop = Math.max(0, Math.round(viewport?.offsetTop ?? 0))
+      document.documentElement.style.setProperty('--site-header-visual-top', `${offsetTop}px`)
+    }
+
+    syncViewportOffset()
+    viewport?.addEventListener('resize', syncViewportOffset)
+    viewport?.addEventListener('scroll', syncViewportOffset)
+    window.addEventListener('orientationchange', syncViewportOffset)
+
+    return () => {
+      viewport?.removeEventListener('resize', syncViewportOffset)
+      viewport?.removeEventListener('scroll', syncViewportOffset)
+      window.removeEventListener('orientationchange', syncViewportOffset)
+      document.documentElement.style.removeProperty('--site-header-visual-top')
+    }
+  }, [])
 
   /**
    * Nav click handler for all links.
@@ -78,11 +103,8 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   return (
     <header className={styles.root}>
       {/*
-       * .cluster is inline-flex so pointer-events only covers the actual
-       * text area — clicks on empty header space pass through to the content.
-       *
-       * On mobile .cluster becomes full-width flex-row via the CSS module
-       * breakpoint — no JS or conditional rendering needed.
+       * .cluster re-enables pointer events for the actual header controls;
+       * the transparent root lets clicks on empty header space pass through.
        */}
       <div className={styles.cluster}>
 

@@ -16,19 +16,22 @@ interface KineticGridPhotoBlok extends SbBlokData {
   num?: string
 }
 
-interface KineticGridBlokShape extends SbBlokData {
+export interface KineticGridBlokShape extends SbBlokData {
   photos: KineticGridPhotoBlok[]
   all_preview_count: number | ''
   eyebrow: string
+  include_all_filter?: boolean
   show_all_photos?: boolean
 }
 
 export default function KineticGridBlok({
   blok,
   defaultCategory,
+  includeAllFilter,
 }: {
   blok: KineticGridBlokShape
   defaultCategory?: string
+  includeAllFilter?: boolean
 }) {
   const categories: Record<string, PhotoConfig[]> = {}
 
@@ -56,6 +59,7 @@ export default function KineticGridBlok({
         allPreviewCount={blok.all_preview_count || undefined}
         eyebrow={blok.eyebrow || undefined}
         defaultCategory={resolvedDefault}
+        includeAllFilter={includeAllFilter ?? blok.include_all_filter ?? true}
         showAllPhotos={blok.show_all_photos}
       />
     </section>

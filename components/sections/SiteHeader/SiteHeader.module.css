@@ -1,7 +1,7 @@
 /*
  * SiteHeader.module.css
  * ─────────────────────────────────────────────────────────────────────────────
- * Stacked-left header — name above, links below as a tight cluster.
+ * Fixed header — name left, four-link nav right.
  * Sits position:fixed so it floats over all page content including the hero.
  *
  * COLOUR REACTIVITY — mix-blend-mode: difference
@@ -18,33 +18,33 @@
  * than the document root. See ScrollHero for where to apply this.
  *
  * LAYOUT
- * Desktop: stacked left cluster — name, then links below.
- * Mobile:  same cluster but links move inline-right of name to save height.
- *          With only two links this fits comfortably at 375px.
+ * Desktop/mobile: one row — name left, links right. Mobile tightens tracking
+ * and spacing so the four links still read as one deliberate line.
  */
 
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 
 .root {
   position: fixed;
-  top: 0;
+  top: var(--site-header-visual-top, 0px);
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 22px 28px;
+  padding: calc(22px + env(safe-area-inset-top, 0px)) 28px 22px;
   /* No background — floats transparently over content */
   pointer-events: none; /* let clicks pass through the empty header area */
   mix-blend-mode: difference;
 }
 
-/* ── Cluster — stacked left ───────────────────────────────────────────────── */
+/* ── Cluster ──────────────────────────────────────────────────────────────── */
 
 .cluster {
-  display: inline-flex;       /* shrinks to content width */
-  flex-direction: column;
+  display: flex;
   align-items: flex-start;
-  gap: 7px;
-  pointer-events: all;        /* re-enable clicks on the cluster itself */
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  pointer-events: all;
 }
 
 /* ── Name ─────────────────────────────────────────────────────────────────── */
@@ -66,6 +66,7 @@
 .nav {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 16px;
 }
 
@@ -101,32 +102,35 @@
 
 /* ── Mobile (max 767px) ───────────────────────────────────────────────────── */
 /*
- * On mobile the stacked layout would occupy two lines of height.
- * Instead, name and links sit on a single line — name left, links right.
- * This keeps the header to a single row height at all viewport sizes.
+ * Mobile keeps the same left/right architecture, with tighter spacing for the
+ * four-link row. If a very narrow device forces a wrap, the row still wraps
+ * only inside the nav side rather than dropping below the name intentionally.
  */
 
 @media (max-width: 767px) {
   .root {
-    padding: 18px 20px;
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 18px;
   }
 
-  /* Full-width row on mobile */
-  .cluster {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 0;
-  }
+  .cluster { gap: 12px; }
 
   .nav {
-    gap: 12px;
+    gap: 7px;
+    flex-wrap: nowrap;
   }
 
   /* Slightly smaller type on mobile — 9px is the accessibility floor */
-  .link { font-size: 9px; letter-spacing: 0.18em; }
+  .link { font-size: 9px; letter-spacing: 0.12em; }
+
+  .name {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+  }
+
+  .sep {
+    width: 1.5px;
+    height: 1.5px;
+  }
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────────── */

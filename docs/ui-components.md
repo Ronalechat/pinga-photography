@@ -73,6 +73,7 @@ support to `PingaButton`.
 | Location | Variant | Type |
 |---|---|---|
 | `EnquiryForm.tsx` submit | `sweep` | `submit` |
+| `ProductEnquiry.tsx` submit | `sweep` | `submit` |
 
 ---
 

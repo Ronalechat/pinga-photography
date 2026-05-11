@@ -95,6 +95,18 @@ export default function SiteFooter({
         <span className={styles.name}>{name}</span>
 
         <nav className={styles.links} aria-label="Footer navigation">
+          <Link href="/gallery" className={styles.link}>
+            Gallery
+          </Link>
+
+          <Link href="/exhibits" className={styles.link}>
+            Exhibits
+          </Link>
+
+          <Link href="/shop" className={styles.link}>
+            Shop
+          </Link>
+
           <a
             href={instagramUrl}
             target="_blank"

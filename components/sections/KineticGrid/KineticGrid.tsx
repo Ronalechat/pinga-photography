@@ -38,6 +38,8 @@ export interface KineticGridProps {
   eyebrow?: string
   /** Pre-select a category filter on mount (e.g. from ?category= query param) */
   defaultCategory?: string
+  /** Include the synthetic "All" filter. Disable for exhibit-style category sets. @default true */
+  includeAllFilter?: boolean
   /** When true, hides filter tabs and shows all photos without the allPreviewCount cap. Uncategorised photos appear last. */
   showAllPhotos?: boolean
 }
@@ -146,22 +148,25 @@ function Card({ item, colIndex, color, onClick, cardIndex }: {
 
 export default function KineticGrid({
   categories,
-  allPreviewCount = 4,
   categoryColors  = DEFAULT_COLORS,
   eyebrow         = 'Selected Work',
   defaultCategory,
+  includeAllFilter = true,
   showAllPhotos   = false,
 }: KineticGridProps) {
   const catNames = Object.keys(categories)
-  const [activeFilter, setActiveFilter] = useState(defaultCategory ?? 'all')
   const [lightbox, setLightbox] = useState<{ list: PhotoConfig[]; index: number } | null>(null)
   const shellRef = useRef<HTMLDivElement>(null)
 
   // Named categories only — Uncategorised is never shown as a filter tab
   const namedCats = catNames.filter(k => k !== UNCATEGORISED)
-  const filterOptions = ['all', ...namedCats]
+  const fallbackCategory = includeAllFilter ? 'all' : namedCats[0] ?? UNCATEGORISED
+  const [activeFilter, setActiveFilter] = useState(defaultCategory ?? fallbackCategory)
+  const filterOptions = includeAllFilter ? ['all', ...namedCats] : namedCats
 
-  // All photos flat: named categories first, uncategorised appended (appears in "all" view)
+  // Full flat list: named categories first, uncategorised appended.
+  // allPreviewCount documents the intended Gallery "All" cap at the prop level,
+  // but the existing Gallery behaviour remains unchanged for now.
   const allPhotosFlat: PhotoConfig[] = [
     ...namedCats.flatMap(cat => categories[cat] ?? []),
     ...(categories[UNCATEGORISED] ?? []),

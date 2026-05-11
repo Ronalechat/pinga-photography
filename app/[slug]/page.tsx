@@ -21,15 +21,18 @@ export default async function SlugPage({
   const version = await getVersion()
 
   const sb = getStoryblokApi()
+  let data
   try {
-    const { data } = await sb.get(`cdn/stories/${slug}`, { version })
-    return (
-      <>
-        <StoryblokServerStory story={data.story} />
-        <StoryblokLiveEditing story={data.story} />
-      </>
-    )
+    const res = await sb.get(`cdn/stories/${slug}`, { version })
+    data = res.data
   } catch {
     notFound()
   }
+
+  return (
+    <>
+      <StoryblokServerStory story={data.story} />
+      <StoryblokLiveEditing story={data.story} />
+    </>
+  )
 }

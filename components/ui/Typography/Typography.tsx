@@ -30,14 +30,18 @@ export interface TypographyProps {
   className?: string
   style?: React.CSSProperties
   color?: string
+  id?: string
+  role?: React.AriaRole
 }
 
 const Typography = React.forwardRef<HTMLElement, TypographyProps>(
-  function Typography({ variant, as, children, className, style, color }, ref) {
+  function Typography({ variant, as, children, className, style, color, id, role }, ref) {
     const Tag = as ?? DEFAULT_ELEMENT[variant]
     return (
       <Tag
         ref={ref}
+        id={id}
+        role={role}
         className={[styles[variant], className].filter(Boolean).join(' ')}
         style={{ color, ...style }}
       >

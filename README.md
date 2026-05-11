@@ -16,6 +16,8 @@ Photography portfolio website built with Next.js and Storyblok CMS.
 | ---------- | ----------------------------- |
 | `/`        | Landing page with scroll hero |
 | `/gallery` | Full gallery — all categories |
+| `/exhibits` | Exhibit-specific galleries |
+| `/shop` | Shirt enquiry / demand collection |
 | `/enquiry` | Enquiry / contact form        |
 
 ## Local Development
@@ -38,6 +40,10 @@ NEXT_PUBLIC_STORYBLOK_ACCESS_TOKEN=
 RESEND_API_KEY=
 SENDER_EMAIL=
 RECIPIENT_EMAIL=
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
+GOOGLE_SHEET_ID=
+GOOGLE_SHEET_RANGE=
 ```
 
 ### 3. HTTPS certificates (optional)

@@ -48,6 +48,25 @@
   margin-bottom: var(--space-xl);
 }
 
+.filters :global(button) {
+  max-width: min(100%, 34ch);
+  min-height: 28px;
+  white-space: normal;
+}
+
+.filters :global(button span) {
+  line-height: 1.25;
+}
+
+@media (max-width: 767px) {
+  .filters :global(button) {
+    flex: 1 1 min(100%, 220px);
+    justify-content: flex-start;
+    padding-block: 8px;
+    text-align: left;
+  }
+}
+
 /* ── Grid ────────────────────────────────────────────────────────────────── */
 
 .grid {
