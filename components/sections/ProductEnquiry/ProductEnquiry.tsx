@@ -43,6 +43,16 @@ export default function ProductEnquiry({
   const [status, setStatus] = useState<Status>(initialStatus)
   const [errors, setErrors] = useState<FieldErrors>({})
   const selectedImage = images[activeImage]
+  const hasMultipleImages = images.length > 1
+
+  function showImage(direction: 'previous' | 'next') {
+    if (!hasMultipleImages) return
+    setActiveImage((current) => (
+      direction === 'next'
+        ? (current + 1) % images.length
+        : (current - 1 + images.length) % images.length
+    ))
+  }
 
   function validate(): FieldErrors {
     const next: FieldErrors = {}
@@ -131,9 +141,26 @@ export default function ProductEnquiry({
                 <Typography variant="eyebrow">{productName}</Typography>
               </div>
             )}
+
+            {hasMultipleImages && (
+              <>
+                <button
+                  type="button"
+                  className={`${styles.imageNav} ${styles.imageNavPrevious}`}
+                  onClick={() => showImage('previous')}
+                  aria-label="Show previous product image"
+                />
+                <button
+                  type="button"
+                  className={`${styles.imageNav} ${styles.imageNavNext}`}
+                  onClick={() => showImage('next')}
+                  aria-label="Show next product image"
+                />
+              </>
+            )}
           </div>
 
-          {images.length > 1 && (
+          {hasMultipleImages && (
             <div className={styles.thumbnails} aria-label="Product images">
               {images.map((image, index) => (
                 <button
@@ -166,7 +193,7 @@ export default function ProductEnquiry({
             <Typography variant="eyebrow" as="p">
               Minimum run: {minimumOrderGoal} enquiries
             </Typography>
-            <Typography variant="displayThin" as="h2" className={styles.title}>
+            <Typography variant="headingMedium" as="h2" className={styles.title}>
               {productName}
             </Typography>
             <Typography variant="body" as="p" className={styles.subtitle}>
