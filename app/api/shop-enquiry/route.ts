@@ -7,6 +7,7 @@ export const runtime = 'nodejs'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const VALID_SIZES = new Set(['Small', 'Medium', 'Large', 'X-Large'])
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_RE = /^[\d\s+\-(). ]*$/
 
 function sanitize(s: unknown): string {
   if (typeof s !== 'string') return ''
@@ -77,7 +78,7 @@ async function getGoogleAccessToken(): Promise<string> {
 
 async function appendToSheet(values: string[]) {
   const sheetId = process.env.GOOGLE_SHEET_ID
-  const range = process.env.GOOGLE_SHEET_RANGE || 'Shop Enquiries!A:F'
+  const range = process.env.GOOGLE_SHEET_RANGE || 'Shop Enquiries!A:G'
 
   if (!sheetId) throw new Error('Missing GOOGLE_SHEET_ID')
 
@@ -104,6 +105,7 @@ function validateBody(body: Record<string, unknown>): string | null {
   const productName = sanitize(body.productName)
   const name = sanitize(body.name)
   const email = sanitize(body.email)
+  const phone = sanitize(body.phone)
   const size = sanitize(body.size)
   const quantity = Number(body.quantity)
 
@@ -113,6 +115,8 @@ function validateBody(body: Record<string, unknown>): string | null {
   if (name.length > 120) return 'Name must be 120 characters or fewer'
   if (!email) return 'Email is required'
   if (!EMAIL_RE.test(email)) return 'Email address is invalid'
+  if (phone && !PHONE_RE.test(phone)) return 'Phone number contains invalid characters'
+  if (phone.length > 30) return 'Phone number must be 30 characters or fewer'
   if (!VALID_SIZES.has(size)) return 'Size is invalid'
   if (!Number.isInteger(quantity) || quantity < 1) {
     return 'Quantity must be at least 1'
@@ -138,12 +142,14 @@ export async function POST(req: NextRequest) {
   const productName = sanitize(body.productName)
   const name = sanitize(body.name)
   const email = sanitize(body.email)
+  const phone = sanitize(body.phone)
   const size = sanitize(body.size)
   const quantity = String(Number(body.quantity))
   const submittedAt = new Date().toISOString()
   const safeProduct = escapeHtml(productName)
   const safeName = escapeHtml(name)
   const safeEmail = escapeHtml(email)
+  const safePhone = escapeHtml(phone)
   const safeSize = escapeHtml(size)
   const safeQuantity = escapeHtml(quantity)
 
@@ -161,6 +167,7 @@ export async function POST(req: NextRequest) {
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; width: 140px; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Product</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeProduct}</td></tr>
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Name</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeName}</td></tr>
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Email</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;"><a href="mailto:${safeEmail}" style="color: #3A3A6E;">${safeEmail}</a></td></tr>
+              ${safePhone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Phone</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safePhone}</td></tr>` : ''}
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Size</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeSize}</td></tr>
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Quantity</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeQuantity}</td></tr>
             </table>
@@ -174,7 +181,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await appendToSheet([submittedAt, productName, name, email, size, quantity])
+    await appendToSheet([submittedAt, productName, name, email, phone, size, quantity])
   } catch (err) {
     console.error('[shop-enquiry] sheet append failed', err)
   }

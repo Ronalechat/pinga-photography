@@ -18,11 +18,6 @@
  * LAYOUT
  * Desktop/mobile: single row — name left, four nav links right.
  *
- * MOBILE CHROME
- * Some real mobile Chrome viewports can report a visual viewport top offset
- * while the browser chrome is visible/collapsing. We mirror that offset into a
- * CSS variable so the fixed header stays inside the visible viewport.
- *
  * ACTIVE STATE
  * Uses Next.js usePathname to apply aria-current="page" to the active link.
  * The CSS module dims the active link slightly so the current page is
@@ -42,7 +37,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
@@ -65,27 +60,6 @@ export interface SiteHeaderProps {
 
 export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
-
-  useEffect(() => {
-    const viewport = window.visualViewport
-
-    const syncViewportOffset = () => {
-      const offsetTop = Math.max(0, Math.round(viewport?.offsetTop ?? 0))
-      document.documentElement.style.setProperty('--site-header-visual-top', `${offsetTop}px`)
-    }
-
-    syncViewportOffset()
-    viewport?.addEventListener('resize', syncViewportOffset)
-    viewport?.addEventListener('scroll', syncViewportOffset)
-    window.addEventListener('orientationchange', syncViewportOffset)
-
-    return () => {
-      viewport?.removeEventListener('resize', syncViewportOffset)
-      viewport?.removeEventListener('scroll', syncViewportOffset)
-      window.removeEventListener('orientationchange', syncViewportOffset)
-      document.documentElement.style.removeProperty('--site-header-visual-top')
-    }
-  }, [])
 
   /**
    * Nav click handler for all links.

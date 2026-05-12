@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Typography from '@/components/ui/Typography/Typography'
 import PingaButton from '@/components/ui/Button/PingaButton'
 import { analytics } from '@/lib/analytics'
@@ -11,7 +11,7 @@ const SIZE_OPTIONS = ['Small', 'Medium', 'Large', 'X-Large'] as const
 
 type ShirtSize = typeof SIZE_OPTIONS[number]
 type Status = 'idle' | 'sending' | 'sent' | 'error'
-type FieldErrors = { name?: string; email?: string; quantity?: string }
+type FieldErrors = { name?: string; email?: string; phone?: string; quantity?: string }
 
 export interface ProductImage {
   src: string
@@ -38,10 +38,13 @@ export default function ProductEnquiry({
   const [activeImage, setActiveImage] = useState(0)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [size, setSize] = useState<ShirtSize>('Medium')
   const [quantity, setQuantity] = useState('1')
   const [status, setStatus] = useState<Status>(initialStatus)
   const [errors, setErrors] = useState<FieldErrors>({})
+  const touchStartXRef = useRef<number | null>(null)
+  const swipeHandledRef = useRef(false)
   const selectedImage = images[activeImage]
   const hasMultipleImages = images.length > 1
 
@@ -54,6 +57,34 @@ export default function ProductEnquiry({
     ))
   }
 
+  function handleImageNavClick(direction: 'previous' | 'next') {
+    if (swipeHandledRef.current) {
+      swipeHandledRef.current = false
+      return
+    }
+
+    showImage(direction)
+  }
+
+  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    touchStartXRef.current = e.touches[0]?.clientX ?? null
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
+    const startX = touchStartXRef.current
+    touchStartXRef.current = null
+    if (startX === null) return
+
+    const endX = e.changedTouches[0]?.clientX
+    if (endX === undefined) return
+
+    const deltaX = endX - startX
+    if (Math.abs(deltaX) < 40) return
+
+    swipeHandledRef.current = true
+    showImage(deltaX > 0 ? 'next' : 'previous')
+  }
+
   function validate(): FieldErrors {
     const next: FieldErrors = {}
     const qty = Number(quantity)
@@ -61,6 +92,9 @@ export default function ProductEnquiry({
     if (!name.trim()) next.name = 'Please enter your name.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       next.email = 'Please enter a valid email address.'
+    }
+    if (phone.trim() && !/^[\d\s+\-(). ]+$/.test(phone)) {
+      next.phone = 'Phone may only contain digits, spaces, and + - ( ).'
     }
     if (!Number.isInteger(qty) || qty < 1) {
       next.quantity = 'Quantity must be at least 1.'
@@ -89,6 +123,7 @@ export default function ProductEnquiry({
           productName,
           name,
           email,
+          phone,
           size,
           quantity: Number(quantity),
         }),
@@ -126,7 +161,11 @@ export default function ProductEnquiry({
     <section className={styles.root} aria-label={`${productName} enquiry`}>
       <div className={styles.inner}>
         <div className={styles.media}>
-          <div className={styles.imageFrame}>
+          <div
+            className={styles.imageFrame}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {selectedImage?.src ? (
               <img
                 src={selectedImage.src}
@@ -147,13 +186,13 @@ export default function ProductEnquiry({
                 <button
                   type="button"
                   className={`${styles.imageNav} ${styles.imageNavPrevious}`}
-                  onClick={() => showImage('previous')}
+                  onClick={() => handleImageNavClick('previous')}
                   aria-label="Show previous product image"
                 />
                 <button
                   type="button"
                   className={`${styles.imageNav} ${styles.imageNavNext}`}
-                  onClick={() => showImage('next')}
+                  onClick={() => handleImageNavClick('next')}
                   aria-label="Show next product image"
                 />
               </>
@@ -250,6 +289,32 @@ export default function ProductEnquiry({
               {errors.email && (
                 <Typography variant="caption" as="p" id="pe-email-error" className={styles.fieldError}>
                   {errors.email}
+                </Typography>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="pe-phone" className={styles.label}>
+                <Typography variant="label">Phone</Typography>
+              </label>
+              <input
+                id="pe-phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => {
+                  const filtered = e.target.value.replace(/[^\d\s+\-(). ]/g, '')
+                  setPhone(filtered)
+                  if (errors.phone) setErrors(prev => ({ ...prev, phone: undefined }))
+                }}
+                className={[styles.input, errors.phone ? styles.inputError : ''].filter(Boolean).join(' ')}
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? 'pe-phone-error' : undefined}
+              />
+              {errors.phone && (
+                <Typography variant="caption" as="p" id="pe-phone-error" className={styles.fieldError}>
+                  {errors.phone}
                 </Typography>
               )}
             </div>
