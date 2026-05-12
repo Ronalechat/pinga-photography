@@ -151,8 +151,6 @@
 html {
   height: 100%;
   background-color: var(--color-bg-primary);
-  background-image: var(--bg-noise);
-  background-size: 256px 256px;
 }
 
 html,
@@ -161,20 +159,16 @@ body {
 }
 
 body {
-  min-height: 100vh;
   min-height: 100svh;
-  min-height: 100dvh;
   overscroll-behavior-y: none;
   /*
-   * isolation: isolate makes body a stacking context so body::before at
-   * z-index: -1 sits above body's background-color but below all children.
-   * Without this, z-index: -1 on a fixed child would fall behind the root
-   * background and disappear.
+   * isolation creates a stacking context for the fixed grain layer. The grain
+   * lives at z-index: 0 and direct children sit above it, which is more stable
+   * in mobile Chrome than a negative z-index background pseudo-element.
    */
   isolation: isolate;
+  position: relative;
   background-color: var(--color-bg-primary);
-  background-image: var(--bg-noise);
-  background-size: 256px 256px;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -183,9 +177,8 @@ body {
 
 /*
  * Grain texture — fixed pseudo-element behind all page content.
- * z-index: -1 within body's isolated stacking context places the grain above
- * body's background-color but below every child element — images, headers,
- * modals. No shadowy overlay, no z-index conflicts with SiteHeader or Lightbox.
+ * z-index: 0 within body's isolated stacking context places the grain above
+ * body's background-color while direct body children render at z-index: 1.
  * mix-blend-mode: overlay blends the noise with body's dark background,
  * producing subtle grain. Wrapped in @supports: no raw static if unsupported.
  */
@@ -204,7 +197,12 @@ body {
     background-size: 256px 256px;
     mix-blend-mode: overlay;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
   }
 }
 

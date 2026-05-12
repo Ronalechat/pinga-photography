@@ -120,15 +120,8 @@ export default function RootLayout({
         <StoryblokProvider>
           <SkipLink />
           <SiteHeader />
-          <div
-            style={{
-              isolation: "isolate",
-              minHeight: "100dvh",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <main id="main-content" style={{ flex: 1 }}>
+          <div style={{ isolation: "isolate" }}>
+            <main id="main-content">
               <PageTransition variant="diagonalWipe">{children}</PageTransition>
             </main>
             <SiteFooter />
