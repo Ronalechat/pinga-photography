@@ -146,7 +146,7 @@ export default function SiteFooter({
       <div className={styles.bar}>
         <div className={styles.barLeft}>
           <span className={styles.copy}>© {year}</span>
-          <span className={styles.environment}>Staging site</span>
+          <span className={styles.environment}>Staging</span>
           <span className={styles.credit}>Website designed and assembled by Michael Z Lin</span>
         </div>
         <span className={styles.location}>{location}</span>
