@@ -20,6 +20,7 @@ export interface ProductImage {
 
 export interface ProductEnquiryProps {
   productName: string
+  price?: string
   subtitle?: string
   images?: ProductImage[]
   minimumOrderGoal?: number
@@ -29,6 +30,7 @@ export interface ProductEnquiryProps {
 
 export default function ProductEnquiry({
   productName,
+  price,
   subtitle = 'Register your interest for the next print run.',
   images = [],
   minimumOrderGoal = 20,
@@ -121,6 +123,7 @@ export default function ProductEnquiry({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName,
+          productPrice: price,
           name,
           email,
           phone,
@@ -235,6 +238,11 @@ export default function ProductEnquiry({
             <Typography variant="headingMedium" as="h2" className={styles.title}>
               {productName}
             </Typography>
+            {price && (
+              <Typography variant="bodyLarge" as="p" className={styles.price}>
+                {price} + shipping
+              </Typography>
+            )}
             <Typography variant="body" as="p" className={styles.subtitle}>
               {subtitle}
             </Typography>

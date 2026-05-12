@@ -11,6 +11,7 @@ interface SbAsset {
 
 export interface ProductEnquiryBlokShape extends SbBlokData {
   product_name?: string
+  price?: string
   subtitle?: string
   images?: SbAsset[]
   minimum_order_goal?: number | ''
@@ -33,6 +34,7 @@ export default function ProductEnquiryBlok({
     <div {...storyblokEditable(blok)}>
       <ProductEnquiry
         productName={blok.product_name || 'P!nga T-Shirt'}
+        price={blok.price || undefined}
         subtitle={blok.subtitle || undefined}
         images={images}
         minimumOrderGoal={blok.minimum_order_goal || undefined}

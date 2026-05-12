@@ -103,6 +103,7 @@ async function appendToSheet(values: string[]) {
 
 function validateBody(body: Record<string, unknown>): string | null {
   const productName = sanitize(body.productName)
+  const productPrice = sanitize(body.productPrice)
   const name = sanitize(body.name)
   const email = sanitize(body.email)
   const phone = sanitize(body.phone)
@@ -111,6 +112,7 @@ function validateBody(body: Record<string, unknown>): string | null {
 
   if (!productName) return 'Product is required'
   if (productName.length > 160) return 'Product name must be 160 characters or fewer'
+  if (productPrice.length > 80) return 'Product price must be 80 characters or fewer'
   if (!name) return 'Name is required'
   if (name.length > 120) return 'Name must be 120 characters or fewer'
   if (!email) return 'Email is required'
@@ -140,6 +142,7 @@ export async function POST(req: NextRequest) {
   }
 
   const productName = sanitize(body.productName)
+  const productPrice = sanitize(body.productPrice)
   const name = sanitize(body.name)
   const email = sanitize(body.email)
   const phone = sanitize(body.phone)
@@ -147,6 +150,7 @@ export async function POST(req: NextRequest) {
   const quantity = String(Number(body.quantity))
   const submittedAt = new Date().toISOString()
   const safeProduct = escapeHtml(productName)
+  const safeProductPrice = escapeHtml(productPrice)
   const safeName = escapeHtml(name)
   const safeEmail = escapeHtml(email)
   const safePhone = escapeHtml(phone)
@@ -165,6 +169,7 @@ export async function POST(req: NextRequest) {
           <tr><td style="padding: 24px 32px 32px; background: #f5f5f5;">
             <table style="width:100%; border-collapse: collapse;">
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; width: 140px; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Product</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeProduct}</td></tr>
+              ${safeProductPrice ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Price</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeProductPrice}</td></tr>` : ''}
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Name</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safeName}</td></tr>
               <tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Email</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;"><a href="mailto:${safeEmail}" style="color: #3A3A6E;">${safeEmail}</a></td></tr>
               ${safePhone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-family: sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888;">Phone</td><td style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${safePhone}</td></tr>` : ''}

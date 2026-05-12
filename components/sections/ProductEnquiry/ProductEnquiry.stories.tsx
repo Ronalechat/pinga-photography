@@ -19,6 +19,7 @@ type Story = StoryObj<typeof meta>
 export const ShirtEnquiry: Story = {
   args: {
     productName: 'P!nga T-Shirt',
+    price: '$60',
     subtitle: 'Register your interest for the first custom print run.',
     minimumOrderGoal: 20,
     images: [
@@ -32,6 +33,7 @@ export const ShirtEnquiry: Story = {
 export const SentState: Story = {
   args: {
     productName: 'P!nga T-Shirt',
+    price: '$60',
     initialStatus: 'sent',
   },
 }
