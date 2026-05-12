@@ -114,12 +114,17 @@
 /* ── Bar (below rule) ─────────────────────────────────────────────────────── */
 
 .copy,
+.environment,
 .location {
   font-family: var(--font-serif);
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted-low);
+}
+
+.environment {
+  color: var(--color-text-muted-mid);
 }
 
 .location {

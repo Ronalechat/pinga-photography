@@ -151,6 +151,8 @@
 html {
   height: 100%;
   background-color: var(--color-bg-primary);
+  background-image: var(--bg-noise);
+  background-size: 256px 256px;
 }
 
 html,
@@ -159,7 +161,9 @@ body {
 }
 
 body {
+  min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
   overscroll-behavior-y: none;
   /*
    * isolation: isolate makes body a stacking context so body::before at
@@ -169,6 +173,8 @@ body {
    */
   isolation: isolate;
   background-color: var(--color-bg-primary);
+  background-image: var(--bg-noise);
+  background-size: 256px 256px;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
