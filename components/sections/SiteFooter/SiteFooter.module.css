@@ -124,7 +124,11 @@
 }
 
 .environment {
-  color: var(--color-text-muted-mid);
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--color-border-input);
+  padding: 5px 8px;
+  color: var(--color-text-primary);
 }
 
 .location {
