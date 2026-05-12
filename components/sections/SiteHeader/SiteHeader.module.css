@@ -26,7 +26,7 @@
 
 .root {
   position: fixed;
-  top: 0;
+  top: var(--site-header-chrome-offset, 0px);
   left: 0;
   right: 0;
   z-index: 100;
@@ -116,7 +116,10 @@
     padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 18px;
   }
 
-  .cluster { gap: 12px; }
+  .cluster {
+    align-items: center;
+    gap: 12px;
+  }
 
   .nav {
     gap: 7px;
@@ -127,7 +130,6 @@
   .link {
     min-height: 44px;
     padding: 0 4px;
-    margin: -14px -4px;
     font-size: 9px;
     letter-spacing: 0.12em;
   }
@@ -135,7 +137,6 @@
   .name {
     min-height: 44px;
     padding-right: 4px;
-    margin-block: -14px;
     font-size: 10px;
     letter-spacing: 0.14em;
   }

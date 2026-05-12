@@ -37,7 +37,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
@@ -60,6 +60,38 @@ export interface SiteHeaderProps {
 
 export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    const mobile = window.matchMedia('(max-width: 767px)')
+    let rafId = 0
+    let lastOffset = -1
+
+    const syncChromeOffset = () => {
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        const rawOffset = mobile.matches ? viewport?.offsetTop ?? 0 : 0
+        const offset = Math.min(64, Math.max(0, Math.round(rawOffset)))
+
+        if (Math.abs(offset - lastOffset) < 2) return
+        lastOffset = offset
+        document.documentElement.style.setProperty('--site-header-chrome-offset', `${offset}px`)
+      })
+    }
+
+    syncChromeOffset()
+    viewport?.addEventListener('resize', syncChromeOffset)
+    viewport?.addEventListener('scroll', syncChromeOffset)
+    mobile.addEventListener('change', syncChromeOffset)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      viewport?.removeEventListener('resize', syncChromeOffset)
+      viewport?.removeEventListener('scroll', syncChromeOffset)
+      mobile.removeEventListener('change', syncChromeOffset)
+      document.documentElement.style.removeProperty('--site-header-chrome-offset')
+    }
+  }, [])
 
   /**
    * Nav click handler for all links.
