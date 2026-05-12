@@ -39,6 +39,10 @@ import { storyblokEditable, type SbBlokData } from '@storyblok/react'
 import { analytics } from '@/lib/analytics'
 import styles from './SiteFooter.module.css'
 
+const SITE_ENV = process.env.NEXT_PUBLIC_SITE_ENV?.toLowerCase()
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.toLowerCase()
+const IS_STAGING = SITE_ENV === 'staging' || SITE_URL?.includes('staging') === true
+
 // ─── Storyblok blok type ──────────────────────────────────────────────────────
 
 export interface SiteFooterBlok extends SbBlokData {
@@ -142,6 +146,7 @@ export default function SiteFooter({
       <div className={styles.bar}>
         <div className={styles.barLeft}>
           <span className={styles.copy}>© {year}</span>
+          {IS_STAGING && <span className={styles.environment}>Staging site</span>}
           <span className={styles.credit}>Website designed and assembled by Michael Z Lin</span>
         </div>
         <span className={styles.location}>{location}</span>
