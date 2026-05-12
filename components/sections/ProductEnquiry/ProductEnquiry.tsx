@@ -240,7 +240,7 @@ export default function ProductEnquiry({
             </Typography>
             {price && (
               <Typography variant="bodyLarge" as="p" className={styles.price}>
-                {price} + shipping
+                ${price} + shipping
               </Typography>
             )}
             <Typography variant="body" as="p" className={styles.subtitle}>
