@@ -149,6 +149,18 @@
   color: var(--color-text-muted-low);
 }
 
+.creditLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s ease;
+}
+
+.creditLink:hover {
+  text-decoration-color: currentColor;
+}
+
 /* ── Mobile (max 767px) ───────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {

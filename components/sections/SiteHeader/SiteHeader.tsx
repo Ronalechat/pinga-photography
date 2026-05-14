@@ -44,7 +44,6 @@ import styles from './SiteHeader.module.css'
 // ─── Nav config ───────────────────────────────────────────────────────────────
 const NAV_LINKS = [
   { label: 'Gallery', href: '/gallery' },
-  { label: 'Exhibits', href: '/exhibits' },
   { label: 'Shop', href: '/shop' },
   { label: 'Enquire', href: '/enquiry', scrollId: 'enquire' },
 ] as const
