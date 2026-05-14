@@ -128,7 +128,7 @@
   width: fit-content;
   border: 1px solid var(--color-border-input);
   padding: 5px 8px;
-  color: var(--color-text-primary);
+  color: pink;
 }
 
 .location {
@@ -147,6 +147,18 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted-low);
+}
+
+.creditLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s ease;
+}
+
+.creditLink:hover {
+  text-decoration-color: currentColor;
 }
 
 /* ── Mobile (max 767px) ───────────────────────────────────────────────────── */

@@ -103,11 +103,7 @@ export default function SiteFooter({
             Gallery
           </Link>
 
-          <Link href="/exhibits" className={styles.link}>
-            Exhibits
-          </Link>
-
-          <Link href="/shop" className={styles.link}>
+<Link href="/shop" className={styles.link}>
             Shop
           </Link>
 
@@ -146,8 +142,8 @@ export default function SiteFooter({
       <div className={styles.bar}>
         <div className={styles.barLeft}>
           <span className={styles.copy}>© {year}</span>
-          {IS_STAGING && <span className={styles.environment}>Staging site</span>}
-          <span className={styles.credit}>Website designed and assembled by Michael Z Lin</span>
+          {IS_STAGING && <span className={styles.environment}>Staging</span>}
+          <span className={styles.credit}>Website designed and assembled by <a href="https://www.instagram.com/fvawnx/" target="_blank" rel="noopener noreferrer" className={styles.creditLink}>Michael Z Lin</a></span>
         </div>
         <span className={styles.location}>{location}</span>
       </div>
