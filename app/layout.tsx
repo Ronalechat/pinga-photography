@@ -4,6 +4,7 @@ import SiteHeader from "@/components/sections/SiteHeader/SiteHeader";
 import SiteFooter from "@/components/sections/SiteFooter/SiteFooter";
 import PageTransition from "@/components/layout/PageTransition/PageTransition";
 import SkipLink from "@/components/ui/SkipLink/SkipLink";
+import SitePreloader from "@/components/layout/SitePreloader/SitePreloader";
 import "@/styles/globals.css";
 
 // Preload Jean-Luc fonts to prevent flash of unstyled text on the hero.
@@ -117,6 +118,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#16161D" />
       </head>
       <body suppressHydrationWarning>
+        <SitePreloader />
         <StoryblokProvider>
           <SkipLink />
           <SiteHeader />

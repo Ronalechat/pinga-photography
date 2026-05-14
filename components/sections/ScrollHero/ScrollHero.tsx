@@ -240,21 +240,24 @@ export default function ScrollHero({
     let cancelled = false
     const reveal = () => {
       if (cancelled) return
+      window.dispatchEvent(new CustomEvent('preloader:ready'))
       el.style.transition = 'opacity 0.4s ease'
       el.style.opacity = '1'
       setTimeout(() => { if (!cancelled) el.style.transition = '' }, 450)
     }
     const fallback = setTimeout(reveal, 3000)
     const img = new Image()
-    img.onload  = () => { clearTimeout(fallback); reveal() }
-    img.onerror = () => { clearTimeout(fallback); reveal() }
     img.src = src
+    img.decode()
+      .then(() => new Promise<void>(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      }))
+      .then(() => { clearTimeout(fallback); reveal() })
+      .catch(() => { clearTimeout(fallback); reveal() })
 
     return () => {
       cancelled = true
       clearTimeout(fallback)
-      img.onload = null
-      img.onerror = null
     }
   }, [slides])
 
