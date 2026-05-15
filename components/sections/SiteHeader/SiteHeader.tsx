@@ -1,7 +1,7 @@
 /**
  * SiteHeader.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Site-wide fixed header — name left, nav right, colour-reactive text.
+ * Site-wide sticky overlay header — name left, nav right, colour-reactive text.
  *
  * Stack: Next.js App Router · CSS Modules · Storyblok
  *

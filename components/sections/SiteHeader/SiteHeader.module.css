@@ -1,8 +1,9 @@
 /*
  * SiteHeader.module.css
  * ─────────────────────────────────────────────────────────────────────────────
- * Fixed header — name left, four-link nav right.
- * Sits position:fixed so it floats over all page content including the hero.
+ * Sticky overlay header — name left, four-link nav right.
+ * Sits at the viewport top while taking no layout space, so it floats over all
+ * page content including the hero.
  *
  * COLOUR REACTIVITY — mix-blend-mode: difference
  * All text is set to white with mix-blend-mode: difference applied.
@@ -25,12 +26,12 @@
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 
 .root {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  padding: calc(22px + var(--header-sat, 0px)) 28px 22px;
+  height: 0;
   /* No background — floats transparently over content */
   pointer-events: none; /* let clicks pass through the empty header area */
   mix-blend-mode: difference;
@@ -44,6 +45,7 @@
   justify-content: space-between;
   gap: 24px;
   width: 100%;
+  padding: calc(22px + var(--header-sat, 0px)) 28px 22px;
   pointer-events: all;
 }
 
@@ -112,13 +114,10 @@
  */
 
 @media (max-width: 767px) {
-  .root {
-    padding: calc(18px + var(--header-sat, 0px)) 20px 18px;
-  }
-
   .cluster {
     align-items: center;
     gap: 12px;
+    padding: calc(18px + var(--header-sat, 0px)) 20px 18px;
   }
 
   .nav {
