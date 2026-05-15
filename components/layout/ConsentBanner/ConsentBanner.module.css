@@ -1,5 +1,6 @@
 .root {
   position: fixed;
+<<<<<<< Updated upstream
   bottom: 0;
   left: 0;
   right: 0;
@@ -15,18 +16,58 @@
 
 .text {
   color: var(--color-text-muted);
+=======
+  bottom: 28px;
+  right: 24px;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: rgba(22, 22, 29, 0.88);
+  border: 1px solid rgba(242, 242, 252, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: all;
+}
+
+.text {
+  font-family: var(--font-serif);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+>>>>>>> Stashed changes
 }
 
 .actions {
   display: flex;
+<<<<<<< Updated upstream
   gap: var(--space-4);
   flex-shrink: 0;
 }
 
+=======
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  opacity: 0.4;
+}
+
+>>>>>>> Stashed changes
 .btn {
   all: unset;
   cursor: pointer;
   font-family: var(--font-serif);
+<<<<<<< Updated upstream
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -35,17 +76,38 @@
   text-underline-offset: 2px;
   text-decoration-color: transparent;
   transition: color 0.2s ease, text-decoration-color 0.2s ease;
+=======
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: color 0.15s ease;
+>>>>>>> Stashed changes
 }
 
 .btn:hover {
   color: var(--color-text-primary);
+<<<<<<< Updated upstream
   text-decoration-color: currentColor;
+=======
+>>>>>>> Stashed changes
 }
 
 @media (max-width: 767px) {
   .root {
+<<<<<<< Updated upstream
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-2);
+=======
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
+    justify-content: space-between;
+  }
+
+  .text {
+    white-space: normal;
+>>>>>>> Stashed changes
   }
 }

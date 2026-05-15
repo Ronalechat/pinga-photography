@@ -61,6 +61,7 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
 
   useEffect(() => {
+<<<<<<< Updated upstream
     const viewport = window.visualViewport
     const mobile = window.matchMedia('(max-width: 767px)')
     let rafId = 0
@@ -90,6 +91,17 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
       mobile.removeEventListener('change', syncChromeOffset)
       document.documentElement.style.removeProperty('--site-header-chrome-offset')
     }
+=======
+    // Snapshot env(safe-area-inset-top) once on mount into a static CSS var.
+    // Prevents Chrome iOS from re-triggering layout on the header each time
+    // the address bar transitions (which can update env() mid-scroll).
+    const el = document.createElement('div')
+    el.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none'
+    document.body.appendChild(el)
+    const inset = el.getBoundingClientRect().height
+    document.body.removeChild(el)
+    document.documentElement.style.setProperty('--header-sat', `${inset}px`)
+>>>>>>> Stashed changes
   }, [])
 
   /**
