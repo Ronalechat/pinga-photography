@@ -1,7 +1,7 @@
 /*
  * SiteHeader.module.css
  * ─────────────────────────────────────────────────────────────────────────────
- * Sticky overlay header — name left, four-link nav right.
+ * Fixed overlay header — name left, four-link nav right.
  * Sits at the viewport top while taking no layout space, so it floats over all
  * page content including the hero.
  *
@@ -26,7 +26,7 @@
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 
 .root {
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -35,6 +35,8 @@
   /* No background — floats transparently over content */
   pointer-events: none; /* let clicks pass through the empty header area */
   mix-blend-mode: difference;
+  transform: translateY(var(--site-header-compensation, 0px));
+  will-change: transform;
 }
 
 /* ── Cluster ──────────────────────────────────────────────────────────────── */

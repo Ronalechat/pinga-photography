@@ -1,7 +1,7 @@
 /**
  * SiteHeader.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Site-wide sticky overlay header — name left, nav right, colour-reactive text.
+ * Site-wide fixed overlay header — name left, nav right, colour-reactive text.
  *
  * Stack: Next.js App Router · CSS Modules · Storyblok
  *
@@ -37,7 +37,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
@@ -59,6 +59,7 @@ export interface SiteHeaderProps {
 
 export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
+  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     // Snapshot env(safe-area-inset-top) once on mount into a static CSS var.
@@ -71,8 +72,44 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
     document.body.removeChild(el)
     document.documentElement.style.setProperty('--header-sat', `${inset}px`)
 
+    const viewport = window.visualViewport
+    let rafId = 0
+    let appliedOffset = 0
+
+    const setOffset = (nextOffset: number) => {
+      if (Math.abs(nextOffset - appliedOffset) < 1) return
+      appliedOffset = nextOffset
+      document.documentElement.style.setProperty('--site-header-compensation', `${nextOffset}px`)
+    }
+
+    const syncHeaderCompensation = () => {
+      rafId = 0
+      const header = headerRef.current
+      if (!header) return
+
+      const unshiftedTop = header.getBoundingClientRect().top - appliedOffset
+      const nextOffset = Math.min(72, Math.max(0, Math.ceil(-unshiftedTop)))
+      setOffset(nextOffset)
+    }
+
+    const scheduleSync = () => {
+      if (!rafId) rafId = requestAnimationFrame(syncHeaderCompensation)
+    }
+
+    scheduleSync()
+    viewport?.addEventListener('scroll', scheduleSync)
+    viewport?.addEventListener('resize', scheduleSync)
+    window.addEventListener('scroll', scheduleSync, { passive: true })
+    window.addEventListener('resize', scheduleSync)
+
     return () => {
+      viewport?.removeEventListener('scroll', scheduleSync)
+      viewport?.removeEventListener('resize', scheduleSync)
+      window.removeEventListener('scroll', scheduleSync)
+      window.removeEventListener('resize', scheduleSync)
+      if (rafId) cancelAnimationFrame(rafId)
       document.documentElement.style.removeProperty('--header-sat')
+      document.documentElement.style.removeProperty('--site-header-compensation')
     }
   }, [])
 
@@ -90,7 +127,7 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   }, [pathname])
 
   return (
-    <header className={styles.root}>
+    <header ref={headerRef} className={styles.root}>
       {/*
        * .cluster re-enables pointer events for the actual header controls;
        * the transparent root lets clicks on empty header space pass through.
