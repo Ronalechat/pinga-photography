@@ -34,10 +34,6 @@
   /* No background — floats transparently over content */
   pointer-events: none; /* let clicks pass through the empty header area */
   mix-blend-mode: difference;
-  /* Chrome toolbar offset applied via transform (GPU-composited) not top
-     (layout reflow) — prevents jitter while toolbar animates in/out. */
-  transform: translateY(var(--site-header-chrome-offset, 0px));
-  will-change: transform;
 }
 
 /* ── Cluster ──────────────────────────────────────────────────────────────── */
