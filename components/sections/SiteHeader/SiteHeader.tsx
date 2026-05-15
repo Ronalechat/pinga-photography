@@ -92,8 +92,28 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
       setOffset(nextOffset)
     }
 
+    const clampBottomOverscroll = () => {
+      const footer = document.querySelector('footer')
+      if (!(footer instanceof HTMLElement)) return
+
+      const viewportHeight = viewport?.height ?? window.innerHeight
+      const viewportTop = Math.min(160, Math.max(0, viewport?.offsetTop ?? 0))
+      const footerBottom = footer.getBoundingClientRect().bottom + window.scrollY
+      const maxScroll = Math.max(0, Math.ceil(footerBottom - viewportHeight - viewportTop))
+      const overscrolled = window.scrollY - maxScroll
+
+      if (overscrolled > 2) {
+        window.scrollTo(0, maxScroll)
+      }
+    }
+
     const scheduleSync = () => {
-      if (!rafId) rafId = requestAnimationFrame(syncHeaderCompensation)
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          clampBottomOverscroll()
+          syncHeaderCompensation()
+        })
+      }
     }
 
     scheduleSync()
