@@ -26,7 +26,7 @@
 
 .root {
   position: fixed;
-  top: var(--site-header-chrome-offset, 0px);
+  top: 0;
   left: 0;
   right: 0;
   z-index: 100;
@@ -34,6 +34,10 @@
   /* No background — floats transparently over content */
   pointer-events: none; /* let clicks pass through the empty header area */
   mix-blend-mode: difference;
+  /* Chrome toolbar offset applied via transform (GPU-composited) not top
+     (layout reflow) — prevents jitter while toolbar animates in/out. */
+  transform: translateY(var(--site-header-chrome-offset, 0px));
+  will-change: transform;
 }
 
 /* ── Cluster ──────────────────────────────────────────────────────────────── */

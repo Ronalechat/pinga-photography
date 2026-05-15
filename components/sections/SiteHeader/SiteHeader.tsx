@@ -70,6 +70,28 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
     const inset = el.getBoundingClientRect().height
     document.body.removeChild(el)
     document.documentElement.style.setProperty('--header-sat', `${inset}px`)
+
+    // Track Chrome toolbar offset via visualViewport.offsetTop.
+    // Applies via transform (GPU-composited) not top (layout) — no jitter.
+    const vv = window.visualViewport
+    if (!vv) return
+
+    let rafId: number | null = null
+    const flush = () => {
+      document.documentElement.style.setProperty('--site-header-chrome-offset', `${vv.offsetTop}px`)
+      rafId = null
+    }
+    const schedule = () => { if (rafId === null) rafId = requestAnimationFrame(flush) }
+
+    vv.addEventListener('scroll', schedule)
+    vv.addEventListener('resize', schedule)
+    flush()
+
+    return () => {
+      vv.removeEventListener('scroll', schedule)
+      vv.removeEventListener('resize', schedule)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
   }, [])
 
   /**
