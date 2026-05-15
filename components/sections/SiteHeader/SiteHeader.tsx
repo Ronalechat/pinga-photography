@@ -1,7 +1,7 @@
 /**
  * SiteHeader.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Site-wide fixed header — name left, nav right, colour-reactive text.
+ * Site-wide fixed overlay header — name left, nav right, colour-reactive text.
  *
  * Stack: Next.js App Router · CSS Modules · Storyblok
  *
@@ -37,7 +37,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
@@ -59,36 +59,77 @@ export interface SiteHeaderProps {
 
 export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
+  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
+    // Snapshot env(safe-area-inset-top) once on mount into a static CSS var.
+    // Prevents Chrome iOS from re-triggering layout on the header each time
+    // the address bar transitions (which can update env() mid-scroll).
+    const el = document.createElement('div')
+    el.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none'
+    document.body.appendChild(el)
+    const inset = el.getBoundingClientRect().height
+    document.body.removeChild(el)
+    document.documentElement.style.setProperty('--header-sat', `${inset}px`)
+
     const viewport = window.visualViewport
-    const mobile = window.matchMedia('(max-width: 767px)')
     let rafId = 0
-    let lastOffset = -1
+    let appliedOffset = 0
 
-    const syncChromeOffset = () => {
-      cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(() => {
-        const rawOffset = mobile.matches ? viewport?.offsetTop ?? 0 : 0
-        const offset = Math.min(64, Math.max(0, Math.round(rawOffset)))
-
-        if (Math.abs(offset - lastOffset) < 2) return
-        lastOffset = offset
-        document.documentElement.style.setProperty('--site-header-chrome-offset', `${offset}px`)
-      })
+    const setOffset = (nextOffset: number) => {
+      if (Math.abs(nextOffset - appliedOffset) < 1) return
+      appliedOffset = nextOffset
+      document.documentElement.style.setProperty('--site-header-compensation', `${nextOffset}px`)
     }
 
-    syncChromeOffset()
-    viewport?.addEventListener('resize', syncChromeOffset)
-    viewport?.addEventListener('scroll', syncChromeOffset)
-    mobile.addEventListener('change', syncChromeOffset)
+    const syncHeaderCompensation = () => {
+      rafId = 0
+      const header = headerRef.current
+      if (!header) return
+
+      const unshiftedTop = header.getBoundingClientRect().top - appliedOffset
+      const nextOffset = Math.min(72, Math.max(0, Math.ceil(-unshiftedTop)))
+      setOffset(nextOffset)
+    }
+
+    const clampBottomOverscroll = () => {
+      const footer = document.querySelector('footer')
+      if (!(footer instanceof HTMLElement)) return
+
+      const viewportHeight = viewport?.height ?? window.innerHeight
+      const viewportTop = Math.min(160, Math.max(0, viewport?.offsetTop ?? 0))
+      const footerBottom = footer.getBoundingClientRect().bottom + window.scrollY
+      const maxScroll = Math.max(0, Math.ceil(footerBottom - viewportHeight - viewportTop))
+      const overscrolled = window.scrollY - maxScroll
+
+      if (overscrolled > 2) {
+        window.scrollTo(0, maxScroll)
+      }
+    }
+
+    const scheduleSync = () => {
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          clampBottomOverscroll()
+          syncHeaderCompensation()
+        })
+      }
+    }
+
+    scheduleSync()
+    viewport?.addEventListener('scroll', scheduleSync)
+    viewport?.addEventListener('resize', scheduleSync)
+    window.addEventListener('scroll', scheduleSync, { passive: true })
+    window.addEventListener('resize', scheduleSync)
 
     return () => {
-      cancelAnimationFrame(rafId)
-      viewport?.removeEventListener('resize', syncChromeOffset)
-      viewport?.removeEventListener('scroll', syncChromeOffset)
-      mobile.removeEventListener('change', syncChromeOffset)
-      document.documentElement.style.removeProperty('--site-header-chrome-offset')
+      viewport?.removeEventListener('scroll', scheduleSync)
+      viewport?.removeEventListener('resize', scheduleSync)
+      window.removeEventListener('scroll', scheduleSync)
+      window.removeEventListener('resize', scheduleSync)
+      if (rafId) cancelAnimationFrame(rafId)
+      document.documentElement.style.removeProperty('--header-sat')
+      document.documentElement.style.removeProperty('--site-header-compensation')
     }
   }, [])
 
@@ -106,7 +147,7 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   }, [pathname])
 
   return (
-    <header className={styles.root}>
+    <header ref={headerRef} className={styles.root}>
       {/*
        * .cluster re-enables pointer events for the actual header controls;
        * the transparent root lets clicks on empty header space pass through.

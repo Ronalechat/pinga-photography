@@ -5,6 +5,7 @@ import SiteFooter from "@/components/sections/SiteFooter/SiteFooter";
 import PageTransition from "@/components/layout/PageTransition/PageTransition";
 import SkipLink from "@/components/ui/SkipLink/SkipLink";
 import SitePreloader from "@/components/layout/SitePreloader/SitePreloader";
+import ConsentBanner from "@/components/layout/ConsentBanner/ConsentBanner";
 import "@/styles/globals.css";
 
 // Preload Jean-Luc fonts to prevent flash of unstyled text on the hero.
@@ -119,6 +120,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <SitePreloader />
+        <ConsentBanner />
         <StoryblokProvider>
           <SkipLink />
           <SiteHeader />
