@@ -4,10 +4,7 @@ import SiteHeader from "@/components/sections/SiteHeader/SiteHeader";
 import SiteFooter from "@/components/sections/SiteFooter/SiteFooter";
 import PageTransition from "@/components/layout/PageTransition/PageTransition";
 import SkipLink from "@/components/ui/SkipLink/SkipLink";
-<<<<<<< Updated upstream
 import SitePreloader from "@/components/layout/SitePreloader/SitePreloader";
-=======
->>>>>>> Stashed changes
 import ConsentBanner from "@/components/layout/ConsentBanner/ConsentBanner";
 import "@/styles/globals.css";
 
@@ -134,7 +131,6 @@ export default function RootLayout({
             <SiteFooter />
           </div>
         </StoryblokProvider>
-        <ConsentBanner />
       </body>
     </html>
   );
