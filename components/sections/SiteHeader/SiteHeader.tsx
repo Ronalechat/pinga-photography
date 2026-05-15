@@ -72,25 +72,63 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
     document.documentElement.style.setProperty('--header-sat', `${inset}px`)
 
     // Track Chrome toolbar offset via visualViewport.offsetTop.
-    // Applies via transform (GPU-composited) not top (layout) — no jitter.
+    // Chrome on iOS can emit noisy offset values while the toolbar animates,
+    // especially during fast scroll and bottom rubber-band. Move the header
+    // down immediately when the browser chrome may cover it, but delay upward
+    // corrections until the viewport settles so the nav does not shimmer.
     const vv = window.visualViewport
-    if (!vv) return
+    const mobile = window.matchMedia('(max-width: 767px)')
+    let offset = 0
+    let rafId = 0
+    let settleTimer: number | null = null
 
-    let rafId: number | null = null
-    const flush = () => {
-      document.documentElement.style.setProperty('--site-header-chrome-offset', `${vv.offsetTop}px`)
-      rafId = null
+    const setOffset = (nextOffset: number) => {
+      if (Math.abs(nextOffset - offset) < 2) return
+      offset = nextOffset
+      document.documentElement.style.setProperty('--site-header-chrome-offset', `${nextOffset}px`)
     }
-    const schedule = () => { if (rafId === null) rafId = requestAnimationFrame(flush) }
 
-    vv.addEventListener('scroll', schedule)
-    vv.addEventListener('resize', schedule)
-    flush()
+    const readOffset = () => {
+      if (!vv || !mobile.matches) return 0
+      const rawOffset = Number.isFinite(vv.offsetTop) ? vv.offsetTop : 0
+      if (rawOffset > 96) return offset
+      return Math.min(72, Math.max(0, Math.round(rawOffset)))
+    }
+
+    const flush = () => {
+      rafId = 0
+      const nextOffset = readOffset()
+
+      if (settleTimer) window.clearTimeout(settleTimer)
+
+      if (nextOffset >= offset) {
+        setOffset(nextOffset)
+        return
+      }
+
+      settleTimer = window.setTimeout(() => {
+        setOffset(readOffset())
+        settleTimer = null
+      }, 160)
+    }
+
+    const schedule = () => {
+      if (!rafId) rafId = requestAnimationFrame(flush)
+    }
+
+    vv?.addEventListener('scroll', schedule)
+    vv?.addEventListener('resize', schedule)
+    mobile.addEventListener('change', schedule)
+    schedule()
 
     return () => {
-      vv.removeEventListener('scroll', schedule)
-      vv.removeEventListener('resize', schedule)
-      if (rafId !== null) cancelAnimationFrame(rafId)
+      vv?.removeEventListener('scroll', schedule)
+      vv?.removeEventListener('resize', schedule)
+      mobile.removeEventListener('change', schedule)
+      if (rafId) cancelAnimationFrame(rafId)
+      if (settleTimer) window.clearTimeout(settleTimer)
+      document.documentElement.style.removeProperty('--header-sat')
+      document.documentElement.style.removeProperty('--site-header-chrome-offset')
     }
   }, [])
 
