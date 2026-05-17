@@ -61,6 +61,77 @@
   text-align: center;
 }
 
+.codeFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.codeField {
+  composes: reset from '../../../components/ui/_buttonReset.module.css';
+  min-height: 58px;
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  justify-items: start;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-input);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.codeFieldSelected {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-input-focus);
+}
+
+.codeField:focus-visible,
+.keypadKey:focus-visible,
+.keypadAction:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.codeValue {
+  min-height: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.keypadKey,
+.keypadAction {
+  composes: reset from '../../../components/ui/_buttonReset.module.css';
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-input);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard);
+}
+
+.keypadKey:hover,
+.keypadAction:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-input-focus);
+}
+
+.keypadAction {
+  min-height: 40px;
+}
+
 .notice {
   color: var(--color-text-muted-high);
 }
@@ -310,6 +381,14 @@
     grid-template-columns: 1fr;
   }
 
+  .codeFields {
+    grid-template-columns: 1fr;
+  }
+
+  .keypadKey {
+    min-height: 56px;
+  }
+
   .recordTopline,
   .recordItem,
   .detailGrid {
@@ -331,5 +410,12 @@
 
   .actions {
     justify-content: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keypadKey,
+  .keypadAction {
+    transition: none;
   }
 }

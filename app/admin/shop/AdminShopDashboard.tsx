@@ -15,6 +15,7 @@ type AuthStatus = 'checking' | 'login' | 'setup' | 'ready'
 type DashboardStatus = 'idle' | 'loading' | 'ready' | 'setup' | 'unauthorised' | 'error'
 type MutationStatus = 'idle' | 'saving'
 type HistoryStatusFilter = 'all' | string
+type AuthCodeField = 'pin' | 'setup'
 
 interface HistoryState {
   orderStatus: HistoryStatusFilter
@@ -93,6 +94,8 @@ const INVENTORY_MODE_OPTIONS = [
 ] as const
 
 const PAGE_LIMIT_OPTIONS = [10, 20, 50] as const
+const SETUP_KEY_MAX_LENGTH = 24
+const KEYPAD_DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'] as const
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-AU', {
@@ -230,12 +233,92 @@ function PageControls({
   )
 }
 
+function MaskedCodeField({
+  label,
+  value,
+  selected,
+  onSelect,
+}: {
+  label: string
+  value: string
+  selected: boolean
+  onSelect: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        styles.codeField,
+        selected ? styles.codeFieldSelected : '',
+      ].filter(Boolean).join(' ')}
+      onClick={onSelect}
+      aria-pressed={selected}
+    >
+      <Typography variant="caption" as="span">
+        {label}
+      </Typography>
+      <Typography variant="body" as="span" className={styles.codeValue}>
+        {value ? '•'.repeat(value.length) : 'Select'}
+      </Typography>
+    </button>
+  )
+}
+
+function NumericKeypad({
+  activeLabel,
+  onDigit,
+  onDelete,
+  onClear,
+}: {
+  activeLabel: string
+  onDigit: (digit: string) => void
+  onDelete: () => void
+  onClear: () => void
+}) {
+  return (
+    <div className={styles.keypad} aria-label={`${activeLabel} numeric keypad`}>
+      {KEYPAD_DIGITS.map((digit) => (
+        <button
+          key={digit}
+          type="button"
+          className={styles.keypadKey}
+          onClick={() => onDigit(digit)}
+          aria-label={`${activeLabel} digit ${digit}`}
+        >
+          <Typography variant="bodyLarge" as="span">
+            {digit}
+          </Typography>
+        </button>
+      ))}
+      <button
+        type="button"
+        className={styles.keypadAction}
+        onClick={onDelete}
+      >
+        <Typography variant="caption" as="span">
+          Delete
+        </Typography>
+      </button>
+      <button
+        type="button"
+        className={styles.keypadAction}
+        onClick={onClear}
+      >
+        <Typography variant="caption" as="span">
+          Clear
+        </Typography>
+      </button>
+    </div>
+  )
+}
+
 export default function AdminShopDashboard() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking')
   const [authMessage, setAuthMessage] = useState('')
   const [username, setUsername] = useState('')
   const [pin, setPin] = useState('')
   const [setupSecret, setSetupSecret] = useState('')
+  const [activeCodeField, setActiveCodeField] = useState<AuthCodeField>('pin')
   const [activeUser, setActiveUser] = useState('')
   const [csrfToken, setCsrfToken] = useState('')
   const [summary, setSummary] = useState<ShopAdminSummary | null>(null)
@@ -419,6 +502,33 @@ export default function AdminShopDashboard() {
     }))
   }
 
+  function handleCodeDigit(digit: string) {
+    if (activeCodeField === 'pin') {
+      setPin((current) => `${current}${digit}`.slice(0, 6))
+      return
+    }
+
+    setSetupSecret((current) => `${current}${digit}`.slice(0, SETUP_KEY_MAX_LENGTH))
+  }
+
+  function handleCodeDelete() {
+    if (activeCodeField === 'pin') {
+      setPin((current) => current.slice(0, -1))
+      return
+    }
+
+    setSetupSecret((current) => current.slice(0, -1))
+  }
+
+  function handleCodeClear() {
+    if (activeCodeField === 'pin') {
+      setPin('')
+      return
+    }
+
+    setSetupSecret('')
+  }
+
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setAuthMessage('')
@@ -438,7 +548,13 @@ export default function AdminShopDashboard() {
 
       if (!res.ok) {
         if (response?.setupRequired) setAuthStatus('setup')
-        setAuthMessage(response?.error ?? 'Login could not be verified.')
+        if (authStatus === 'setup' && setupSecret) {
+          setSetupSecret('')
+          setActiveCodeField('setup')
+          setAuthMessage('Setup key did not match. Try entering it again.')
+        } else {
+          setAuthMessage(response?.error ?? 'Login could not be verified.')
+        }
         return
       }
 
@@ -471,6 +587,11 @@ export default function AdminShopDashboard() {
     if (authStatus === 'ready') void handleLoadSummary()
   }, [authStatus, handleLoadSummary])
 
+  useEffect(() => {
+    if (authStatus === 'setup') setActiveCodeField('setup')
+    if (authStatus === 'login') setActiveCodeField('pin')
+  }, [authStatus])
+
   if (authStatus === 'checking') {
     return (
       <section className={styles.root} aria-labelledby="shop-admin-dashboard">
@@ -492,7 +613,7 @@ export default function AdminShopDashboard() {
               Dashboard login
             </Typography>
             <Typography variant="body" as="p" color="var(--color-text-muted-high)">
-              Enter your admin name and six digit code to load shop data.
+              Enter your admin name, then use the number pad for your code.
             </Typography>
           </div>
 
@@ -511,39 +632,35 @@ export default function AdminShopDashboard() {
               />
             </label>
 
-            <label className={styles.tokenField}>
-              <Typography variant="caption" as="span">
-                Code
-              </Typography>
-              <input
-                type="password"
+            <div className={styles.codeFields}>
+              <MaskedCodeField
+                label="Code"
                 value={pin}
-                onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                className={[styles.input, styles.pinInput].join(' ')}
-                inputMode="numeric"
-                autoComplete="current-password"
+                selected={activeCodeField === 'pin'}
+                onSelect={() => setActiveCodeField('pin')}
               />
-            </label>
 
-            {authStatus === 'setup' && (
-              <label className={styles.tokenField}>
-                <Typography variant="caption" as="span">
-                  Setup key
-                </Typography>
-                <input
-                  type="password"
+              {authStatus === 'setup' && (
+                <MaskedCodeField
+                  label="Setup key"
                   value={setupSecret}
-                  onChange={(event) => setSetupSecret(event.target.value)}
-                  className={styles.input}
-                  autoComplete="one-time-code"
+                  selected={activeCodeField === 'setup'}
+                  onSelect={() => setActiveCodeField('setup')}
                 />
-              </label>
-            )}
+              )}
+            </div>
+
+            <NumericKeypad
+              activeLabel={activeCodeField === 'pin' ? 'Code' : 'Setup key'}
+              onDigit={handleCodeDigit}
+              onDelete={handleCodeDelete}
+              onClear={handleCodeClear}
+            />
 
             <PingaButton
               variant="ghost"
               type="submit"
-              disabled={!username || pin.length !== 6}
+              disabled={!username || pin.length !== 6 || (authStatus === 'setup' && !setupSecret)}
             >
               {authStatus === 'setup' ? 'Set code' : 'Log in'}
             </PingaButton>

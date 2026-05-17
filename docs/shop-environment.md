@@ -146,6 +146,8 @@ rejected before any Supabase mutation runs.
 
 First-time PIN setup requires the one-time `SHOP_ADMIN_SETUP_SECRET`. Only
 usernames listed in `SHOP_ADMIN_USERNAMES` can enrol or log in.
+Use a numeric setup secret so Paul and Michael can enter it with the admin
+number pad on mobile.
 
 Order status updates are operational records only. Marking an order as
 `refunded` in the dashboard does not create a Stripe refund; Stripe refunds
