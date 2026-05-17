@@ -171,10 +171,10 @@ from public navigation and requires a signed admin session before returning
 customer, order, enquiry, or inventory data.
 
 The protected summary endpoint is `/api/admin/shop/summary`. Admin access uses
-username + six digit PIN login, with PIN hashes stored in Supabase and a signed
+username + a six-or-more digit code, with code hashes stored in Supabase and a signed
 HttpOnly cookie named `pinga_shop_admin_session`.
 
-First-time PIN setup is only available for usernames listed in
+First-time code setup is only available for usernames listed in
 `SHOP_ADMIN_USERNAMES` and requires `SHOP_ADMIN_SETUP_SECRET`. Failed attempts
 are tracked in Supabase and temporarily lock the account after repeated misses.
 

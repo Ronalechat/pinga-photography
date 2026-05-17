@@ -63,7 +63,7 @@
 
 .codeFields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 10px;
 }
 
@@ -130,6 +130,37 @@
 
 .keypadAction {
   min-height: 40px;
+}
+
+.enterButton {
+  justify-self: start;
+}
+
+.enterButtonContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.enterIcon {
+  position: relative;
+  width: 16px;
+  height: 12px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-1px);
+}
+
+.enterIcon::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg);
 }
 
 .notice {

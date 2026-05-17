@@ -82,7 +82,7 @@ function sanitizePin(value: unknown) {
 }
 
 function getGenericAuthError() {
-  return 'Login could not be verified.'
+  return 'Entry could not be verified.'
 }
 
 function getAdminSupabaseError(error: SupabaseRestError) {
@@ -94,7 +94,7 @@ function getAdminSupabaseError(error: SupabaseRestError) {
     return 'Shop admin data could not be accessed. Check the Supabase service role key.'
   }
 
-  return 'Shop admin login could not be checked. Check the Netlify function logs.'
+  return 'Shop admin entry could not be checked. Check the Netlify function logs.'
 }
 
 function signPayload(payload: string) {
@@ -127,7 +127,7 @@ function getPinRecord(pin: string) {
 }
 
 function isValidPin(pin: string) {
-  return /^\d{6}$/.test(pin)
+  return /^\d{6,}$/.test(pin)
 }
 
 function isLocked(row: AdminUserRow) {
@@ -296,7 +296,7 @@ export function getAdminAuthError(req: NextRequest, options: AdminAuthOptions = 
 
   if (!setup.ready) {
     return NextResponse.json({
-      error: 'Shop admin login is not configured.',
+      error: 'Shop admin entry is not configured.',
       setupRequired: true,
       missing: setup.missing,
     }, { status: 501 })
@@ -324,7 +324,7 @@ export async function verifyAdminPinLogin(input: {
   const setup = getAdminAuthSetupStatus()
 
   if (!setup.ready) {
-    return { ok: false, error: 'Shop admin login is not configured.' }
+    return { ok: false, error: 'Shop admin entry is not configured.' }
   }
 
   if (!isAllowedUsername(username) || !isValidPin(pin)) {
@@ -378,6 +378,6 @@ export async function verifyAdminPinLogin(input: {
       }
     }
 
-    return { ok: false, error: 'Shop admin login could not be checked.' }
+    return { ok: false, error: 'Shop admin entry could not be checked.' }
   }
 }

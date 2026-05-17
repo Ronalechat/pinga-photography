@@ -110,7 +110,8 @@ The admin shell lives at:
 /admin/shop
 ```
 
-It is a lightweight operational dashboard behind username + six digit PIN login.
+It is a lightweight operational dashboard behind username + a six-or-more digit
+admin code.
 It shows recent orders, enquiries, inventory, and active stock reservations once
 Supabase is connected. Admin reads and operational updates do not require Stripe;
 paid checkout and webhook stock conversion still do.
@@ -137,17 +138,18 @@ reservationsLimit/reservationsOffset, inventoryLimit/inventoryOffset
 ```
 
 Admin API routes require the signed `pinga_shop_admin_session` cookie created by
-`POST /api/admin/shop/login`. The PIN is hashed before storage in Supabase, and
+`POST /api/admin/shop/login`. The code is hashed before storage in Supabase, and
 failed attempts lock the account temporarily.
 
 The login and session APIs return a CSRF token for dashboard JavaScript to send
 as `X-Pinga-Shop-CSRF` on admin POST/PATCH routes. Missing or stale tokens are
 rejected before any Supabase mutation runs.
 
-First-time PIN setup requires the one-time `SHOP_ADMIN_SETUP_SECRET`. Only
-usernames listed in `SHOP_ADMIN_USERNAMES` can enrol or log in.
+First-time code setup requires the one-time `SHOP_ADMIN_SETUP_SECRET`. Only
+usernames listed in `SHOP_ADMIN_USERNAMES` can enrol or enter.
 Use a numeric setup secret so Paul and Michael can enter it with the admin
-number pad on mobile.
+number pad on mobile. The setup secret is not capped by the interface; use at
+least six digits so it is not easy to guess.
 
 Order status updates are operational records only. Marking an order as
 `refunded` in the dashboard does not create a Stripe refund; Stripe refunds
