@@ -15,7 +15,7 @@ type AuthStatus = 'checking' | 'login' | 'setup' | 'ready'
 type DashboardStatus = 'idle' | 'loading' | 'ready' | 'setup' | 'unauthorised' | 'error'
 type MutationStatus = 'idle' | 'saving'
 type HistoryStatusFilter = 'all' | string
-type AuthCodeField = 'pin' | 'confirm' | 'setup'
+type AuthCodeField = 'pin' | 'confirm'
 
 interface HistoryState {
   orderStatus: HistoryStatusFilter
@@ -47,6 +47,7 @@ interface LoginResponse {
   csrfToken?: string
   error?: string
   setupRequired?: boolean
+  setupVerified?: boolean
 }
 
 const DEFAULT_HISTORY: HistoryState = {
@@ -551,10 +552,7 @@ export default function AdminShopDashboard() {
 
     if (activeCodeField === 'confirm') {
       setConfirmPin((current) => `${current}${digit}`)
-      return
     }
-
-    setSetupSecret((current) => `${current}${digit}`)
   }
 
   function handleCodeDelete() {
@@ -565,10 +563,7 @@ export default function AdminShopDashboard() {
 
     if (activeCodeField === 'confirm') {
       setConfirmPin((current) => current.slice(0, -1))
-      return
     }
-
-    setSetupSecret((current) => current.slice(0, -1))
   }
 
   function handleCodeClear() {
@@ -579,10 +574,7 @@ export default function AdminShopDashboard() {
 
     if (activeCodeField === 'confirm') {
       setConfirmPin('')
-      return
     }
-
-    setSetupSecret('')
   }
 
   function canSubmitAuth() {
@@ -627,11 +619,23 @@ export default function AdminShopDashboard() {
       const response = data && typeof data === 'object' ? data as LoginResponse : null
 
       if (!res.ok) {
-        if (response?.setupRequired) setAuthStatus('setup')
+        if (response?.setupVerified && authStatus !== 'setup') {
+          setAuthStatus('setup')
+          setSetupSecret(pin)
+          setPin('')
+          setConfirmPin('')
+          setActiveCodeField('pin')
+          setAuthMessage('Set your admin code, then repeat it.')
+          return
+        }
+
         if (authStatus === 'setup' && setupSecret) {
+          setAuthStatus('login')
+          setPin('')
+          setConfirmPin('')
           setSetupSecret('')
-          setActiveCodeField('setup')
-          setAuthMessage('Setup key did not match. Try entering it again.')
+          setActiveCodeField('pin')
+          setAuthMessage('Setup could not be verified. Enter the setup key again.')
         } else {
           setAuthMessage(response?.error ?? 'Entry could not be verified.')
         }
@@ -670,7 +674,7 @@ export default function AdminShopDashboard() {
   }, [authStatus, handleLoadSummary])
 
   useEffect(() => {
-    if (authStatus === 'setup') setActiveCodeField('confirm')
+    if (authStatus === 'setup') setActiveCodeField('pin')
     if (authStatus === 'login') setActiveCodeField('pin')
   }, [authStatus])
 
@@ -695,29 +699,42 @@ export default function AdminShopDashboard() {
               Dashboard entry
             </Typography>
             <Typography variant="body" as="p" color="var(--color-text-muted-high)">
-              Enter your admin name, then use the number pad for your code.
+              {authStatus === 'setup'
+                ? 'Set your admin code, then repeat it.'
+                : 'Enter your admin code. For first-time setup, enter the setup key once.'}
             </Typography>
           </div>
 
           <form className={styles.auth} onSubmit={handleLogin}>
-            <label className={styles.tokenField}>
-              <Typography variant="caption" as="span">
-                Username
-              </Typography>
-              <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                className={styles.input}
-                autoComplete="username"
-                spellCheck={false}
-                onKeyDown={handleUsernameKeyDown}
-              />
-            </label>
+            {authStatus === 'setup' ? (
+              <div className={styles.tokenField}>
+                <Typography variant="caption" as="span">
+                  Username
+                </Typography>
+                <Typography variant="body" as="p">
+                  {username}
+                </Typography>
+              </div>
+            ) : (
+              <label className={styles.tokenField}>
+                <Typography variant="caption" as="span">
+                  Username
+                </Typography>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  className={styles.input}
+                  autoComplete="username"
+                  spellCheck={false}
+                  onKeyDown={handleUsernameKeyDown}
+                />
+              </label>
+            )}
 
             <div className={styles.codeFields}>
               <MaskedCodeField
-                label="Code"
+                label={authStatus === 'setup' ? 'Set your code' : 'Code'}
                 value={pin}
                 selected={activeCodeField === 'pin'}
                 onSelect={() => setActiveCodeField('pin')}
@@ -731,12 +748,6 @@ export default function AdminShopDashboard() {
                     selected={activeCodeField === 'confirm'}
                     onSelect={() => setActiveCodeField('confirm')}
                   />
-                  <MaskedCodeField
-                    label="Setup key"
-                    value={setupSecret}
-                    selected={activeCodeField === 'setup'}
-                    onSelect={() => setActiveCodeField('setup')}
-                  />
                 </>
               )}
             </div>
@@ -744,10 +755,8 @@ export default function AdminShopDashboard() {
             <NumericKeypad
               activeLabel={
                 activeCodeField === 'pin'
-                  ? 'Code'
-                  : activeCodeField === 'confirm'
-                    ? 'Repeat code'
-                    : 'Setup key'
+                  ? authStatus === 'setup' ? 'Set your code' : 'Code'
+                  : 'Repeat code'
               }
               onDigit={handleCodeDigit}
               onDelete={handleCodeDelete}

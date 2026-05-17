@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null) as unknown
 
   if (!body || typeof body !== 'object') {
-    return NextResponse.json({ error: 'Login could not be verified.' }, { status: 400 })
+    return NextResponse.json({ error: 'Entry could not be verified.' }, { status: 400 })
   }
 
   const result = await verifyAdminPinLogin({
@@ -23,8 +23,9 @@ export async function POST(req: NextRequest) {
 
   if (!result.ok || !result.username) {
     return NextResponse.json({
-      error: result.error ?? 'Login could not be verified.',
+      error: result.error ?? 'Entry could not be verified.',
       setupRequired: result.setupRequired,
+      setupVerified: result.setupVerified,
       locked: result.locked,
     }, {
       status: result.locked ? 429 : result.setupRequired ? 403 : 401,

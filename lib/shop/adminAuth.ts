@@ -31,6 +31,7 @@ interface AdminUserRow {
 interface AuthResult {
   ok: boolean
   setupRequired?: boolean
+  setupVerified?: boolean
   locked?: boolean
   error?: string
   username?: string
@@ -335,6 +336,15 @@ export async function verifyAdminPinLogin(input: {
     const row = await getAdminUser(username)
 
     if (!row) {
+      if (!setupSecret && safeEqual(pin, getSetupSecret())) {
+        return {
+          ok: false,
+          setupRequired: true,
+          setupVerified: true,
+          error: 'Set your admin code.',
+        }
+      }
+
       if (!setupSecret || !safeEqual(setupSecret, getSetupSecret())) {
         return {
           ok: false,

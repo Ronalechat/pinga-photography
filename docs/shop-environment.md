@@ -146,7 +146,9 @@ as `X-Pinga-Shop-CSRF` on admin POST/PATCH routes. Missing or stale tokens are
 rejected before any Supabase mutation runs.
 
 First-time code setup requires the one-time `SHOP_ADMIN_SETUP_SECRET`. Only
-usernames listed in `SHOP_ADMIN_USERNAMES` can enrol or enter.
+usernames listed in `SHOP_ADMIN_USERNAMES` can enrol or enter. On first entry,
+the user enters their username and the setup key once; after the setup key is
+accepted, the dashboard asks them to set and repeat their personal admin code.
 Use a numeric setup secret so Paul and Michael can enter it with the admin
 number pad on mobile. The setup secret is not capped by the interface; use at
 least six digits so it is not easy to guess.

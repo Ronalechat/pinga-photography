@@ -175,8 +175,10 @@ username + a six-or-more digit code, with code hashes stored in Supabase and a s
 HttpOnly cookie named `pinga_shop_admin_session`.
 
 First-time code setup is only available for usernames listed in
-`SHOP_ADMIN_USERNAMES` and requires `SHOP_ADMIN_SETUP_SECRET`. Failed attempts
-are tracked in Supabase and temporarily lock the account after repeated misses.
+`SHOP_ADMIN_USERNAMES` and requires `SHOP_ADMIN_SETUP_SECRET`. The setup key is
+entered once, then held only in the in-memory client state while the user sets
+and repeats their personal code. Failed attempts are tracked in Supabase and
+temporarily lock the account after repeated misses.
 
 The dashboard summary includes paginated order line items, selected options,
 customer contact details, shipping labels/addresses, inventory rows, and
