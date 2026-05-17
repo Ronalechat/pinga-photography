@@ -149,6 +149,42 @@ Full documentation: `/docs/ui-components.md`
 | `/gallery` | Gallery page — all categories, KineticGrid                    |
 | `/enquiry` | Enquiry form page — EnquiryForm with all fields pre-revealed  |
 
+## Shop Architecture
+
+Full shop notes live in `/docs/shop-architecture.md`. Storyblok schema setup
+lives in `/docs/storyblok-shop-schema.md`. Follow those before adding or
+changing shop behaviour.
+
+- Storyblok owns product copy, images, product options, editorial pricing
+  labels, and shipping metadata.
+- Supabase owns stock, reservations, enquiries, orders, fulfilment state, and
+  future admin data.
+- Stripe owns payment and checkout session state.
+- Browser `localStorage` owns only the anonymous in-progress cart. It is a
+  convenience cache, not a source of truth.
+- Before checkout, server code must revalidate product availability, selected
+  options, price, stock, and shipping. Never trust client-submitted totals.
+- Checkout and webhook routes must fail honestly while Stripe/Supabase are not
+  connected. Do not simulate payment success or stock mutation.
+- Paid checkout creation must stay behind `SHOP_CHECKOUT_ENABLED=true` until
+  webhook handling and Supabase order persistence have been verified.
+- Admin routes must not expose order/customer data unless an auth gate is in
+  place. The temporary summary API uses `SHOP_ADMIN_ACCESS_TOKEN`.
+- Admin summary data includes order line items, customer contact details,
+  selected options, inventory, and active reservations. Keep operational actions
+  token-gated, including expired reservation release.
+- Cart UI is scoped to `/shop` only. The cart count must show the total quantity
+  once items have been added, and the cart should persist if the visitor returns.
+- There is no arbitrary per-person purchase maximum. Quantity is limited only by
+  real stock for limited products.
+- Limited paid products require stock reservations while a visitor is in Stripe
+  Checkout. Enquiry-only products do not reserve stock.
+- Shipping starts with server-side rule-based rates and a manual quote fallback
+  for framed, oversized, fragile, international, or unknown parcels. Carrier
+  APIs can replace the quote engine later.
+- Do not duplicate product image viewer logic. Product image galleries use
+  `components/ui/ProductMediaViewer/ProductMediaViewer`.
+
 ## Placeholder → Real Image Migration
 
 Both `ImageCarousel` and `KineticGrid` support a `src` prop on each slide/photo config. When `src` is provided a real `<img>` renders; otherwise a coloured placeholder block is shown. Remove placeholder-only code paths once real images are wired in.

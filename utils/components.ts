@@ -7,6 +7,7 @@ import AboutSectionBlok from '@/components/bloks/AboutSectionBlok'
 import SiteFooterBlok from '@/components/bloks/SiteFooterBlok'
 import EnquiryFormBlok from '@/components/bloks/EnquiryFormBlok'
 import ProductEnquiryBlok from '@/components/bloks/ProductEnquiryBlok'
+import ShopProductBlok from '@/components/bloks/ShopProductBlok'
 
 type StoryblokComponent = React.ComponentType<Record<string, unknown>>
 
@@ -20,4 +21,5 @@ export const components: Record<string, StoryblokComponent> = {
   site_footer:     SiteFooterBlok as StoryblokComponent,
   enquiry_form:    EnquiryFormBlok as StoryblokComponent,
   product_enquiry: ProductEnquiryBlok as StoryblokComponent,
+  shop_product:    ShopProductBlok as StoryblokComponent,
 }

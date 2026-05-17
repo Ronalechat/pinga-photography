@@ -170,3 +170,32 @@ signal regardless of whether they're in a single-select or multi-select context.
 | Resting text (button) | `rgba(242, 242, 252, 0.6)` |
 | Resting text (toggle) | `rgba(179, 179, 186, 0.5)` |
 | Reduced motion | All transitions suppressed via `prefers-reduced-motion: reduce` |
+
+---
+
+## ProductMediaViewer
+
+**File:** `/components/ui/ProductMediaViewer/ProductMediaViewer.tsx`
+**CSS:** `/components/ui/ProductMediaViewer/ProductMediaViewer.module.css`
+**Stories:** `Pinga / UI / ProductMediaViewer` in Storybook
+
+Shared image viewer for shop/product-style components. Use this instead of
+duplicating image navigation inside section components.
+
+### Responsibilities
+
+- main product image display
+- square thumbnail strip when more than one image exists
+- no thumbnails when only one image exists
+- previous/next tap zones on the image
+- touch swipe
+- keyboard navigation
+- accessible labels
+- placeholder state when no image is available
+
+### Current usage
+
+| Location | Purpose |
+| --- | --- |
+| `ProductEnquiry.tsx` | Demand/enquiry product media |
+| `ShopProduct.tsx` | Cart-enabled product media |

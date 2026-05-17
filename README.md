@@ -17,7 +17,8 @@ Photography portfolio website built with Next.js and Storyblok CMS.
 | `/`        | Landing page with scroll hero |
 | `/gallery` | Full gallery — all categories |
 | `/exhibits` | Exhibit-specific galleries |
-| `/shop` | Shirt enquiry / demand collection |
+| `/shop` | Shop products, enquiries, cart |
+| `/admin/shop` | Token-gated shop admin dashboard |
 | `/enquiry` | Enquiry / contact form        |
 
 ## Local Development
@@ -46,10 +47,22 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
 GOOGLE_SHEET_ID=
 GOOGLE_SHEET_RANGE=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+SHOP_CHECKOUT_ENABLED=false
+SHOP_ADMIN_ACCESS_TOKEN=
 ```
 
 For the staging deploy, set `NEXT_PUBLIC_SITE_ENV=staging` in Netlify. The
 footer also treats any `NEXT_PUBLIC_SITE_URL` containing `staging` as staging.
+
+Shop setup notes:
+
+- Storyblok schema: `docs/storyblok-shop-schema.md`
+- Supabase schema: `docs/supabase-shop-schema.sql`
+- Checkout/admin environment: `docs/shop-environment.md`
 
 ### 3. HTTPS certificates (optional)
 

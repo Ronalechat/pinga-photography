@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Typography from '@/components/ui/Typography/Typography'
 import PingaButton from '@/components/ui/Button/PingaButton'
+import ProductMediaViewer, {
+  type ProductMediaImage,
+} from '@/components/ui/ProductMediaViewer/ProductMediaViewer'
 import { analytics } from '@/lib/analytics'
-import utilStyles from '@/styles/utility.module.css'
 import styles from './ProductEnquiry.module.css'
 
 const SIZE_OPTIONS = ['Small', 'Medium', 'Large', 'X-Large'] as const
@@ -13,12 +15,10 @@ type ShirtSize = typeof SIZE_OPTIONS[number]
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 type FieldErrors = { name?: string; email?: string; phone?: string; quantity?: string }
 
-export interface ProductImage {
-  src: string
-  alt?: string
-}
+export type ProductImage = ProductMediaImage
 
 export interface ProductEnquiryProps {
+  productId?: string
   productName: string
   price?: string
   subtitle?: string
@@ -29,6 +29,7 @@ export interface ProductEnquiryProps {
 }
 
 export default function ProductEnquiry({
+  productId,
   productName,
   price,
   subtitle = 'Register your interest for the next print run.',
@@ -37,7 +38,6 @@ export default function ProductEnquiry({
   ctaLabel = 'Send enquiry',
   initialStatus = 'idle',
 }: ProductEnquiryProps) {
-  const [activeImage, setActiveImage] = useState(0)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -45,47 +45,6 @@ export default function ProductEnquiry({
   const [quantity, setQuantity] = useState('1')
   const [status, setStatus] = useState<Status>(initialStatus)
   const [errors, setErrors] = useState<FieldErrors>({})
-  const touchStartXRef = useRef<number | null>(null)
-  const swipeHandledRef = useRef(false)
-  const selectedImage = images[activeImage]
-  const hasMultipleImages = images.length > 1
-
-  function showImage(direction: 'previous' | 'next') {
-    if (!hasMultipleImages) return
-    setActiveImage((current) => (
-      direction === 'next'
-        ? (current + 1) % images.length
-        : (current - 1 + images.length) % images.length
-    ))
-  }
-
-  function handleImageNavClick(direction: 'previous' | 'next') {
-    if (swipeHandledRef.current) {
-      swipeHandledRef.current = false
-      return
-    }
-
-    showImage(direction)
-  }
-
-  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
-    touchStartXRef.current = e.touches[0]?.clientX ?? null
-  }
-
-  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
-    const startX = touchStartXRef.current
-    touchStartXRef.current = null
-    if (startX === null) return
-
-    const endX = e.changedTouches[0]?.clientX
-    if (endX === undefined) return
-
-    const deltaX = endX - startX
-    if (Math.abs(deltaX) < 40) return
-
-    swipeHandledRef.current = true
-    showImage(deltaX > 0 ? 'next' : 'previous')
-  }
 
   function validate(): FieldErrors {
     const next: FieldErrors = {}
@@ -122,6 +81,7 @@ export default function ProductEnquiry({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          productId,
           productName,
           productPrice: price,
           name,
@@ -164,70 +124,7 @@ export default function ProductEnquiry({
     <section className={styles.root} aria-label={`${productName} enquiry`}>
       <div className={styles.inner}>
         <div className={styles.media}>
-          <div
-            className={styles.imageFrame}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            {selectedImage?.src ? (
-              <img
-                src={selectedImage.src}
-                alt={selectedImage.alt || productName}
-                className={utilStyles.imgBlock}
-                loading="eager"
-                decoding="async"
-                draggable={false}
-              />
-            ) : (
-              <div className={styles.placeholder}>
-                <Typography variant="eyebrow">{productName}</Typography>
-              </div>
-            )}
-
-            {hasMultipleImages && (
-              <>
-                <button
-                  type="button"
-                  className={`${styles.imageNav} ${styles.imageNavPrevious}`}
-                  onClick={() => handleImageNavClick('previous')}
-                  aria-label="Show previous product image"
-                />
-                <button
-                  type="button"
-                  className={`${styles.imageNav} ${styles.imageNavNext}`}
-                  onClick={() => handleImageNavClick('next')}
-                  aria-label="Show next product image"
-                />
-              </>
-            )}
-          </div>
-
-          {hasMultipleImages && (
-            <div className={styles.thumbnails} aria-label="Product images">
-              {images.map((image, index) => (
-                <button
-                  key={`${image.src}-${index}`}
-                  type="button"
-                  className={[
-                    styles.thumbnail,
-                    index === activeImage ? styles.thumbnailActive : '',
-                  ].filter(Boolean).join(' ')}
-                  onClick={() => setActiveImage(index)}
-                  aria-label={`Show image ${index + 1}`}
-                  aria-pressed={index === activeImage}
-                >
-                  <img
-                    src={image.src}
-                    alt=""
-                    className={utilStyles.imgBlock}
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          <ProductMediaViewer images={images} label={productName} />
         </div>
 
         <div className={styles.content}>

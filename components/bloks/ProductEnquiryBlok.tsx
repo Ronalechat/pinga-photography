@@ -10,6 +10,7 @@ interface SbAsset {
 }
 
 export interface ProductEnquiryBlokShape extends SbBlokData {
+  product_id?: string
   product_name?: string
   price?: string
   subtitle?: string
@@ -33,6 +34,7 @@ export default function ProductEnquiryBlok({
   return (
     <div {...storyblokEditable(blok)}>
       <ProductEnquiry
+        productId={blok.product_id || undefined}
         productName={blok.product_name || 'P!nga T-Shirt'}
         price={blok.price || undefined}
         subtitle={blok.subtitle || undefined}
