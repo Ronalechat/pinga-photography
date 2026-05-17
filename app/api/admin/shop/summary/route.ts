@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
       appendPage(`/rest/v1/shop_orders?select=id,status,customer_name,customer_email,customer_phone,subtotal_cents,shipping_cents,total_cents,currency,shipping_option_label,shipping_address,created_at,shop_order_items(id,product_id,title,quantity,unit_amount_cents,currency,selected_options,option_signature)&order=created_at.desc${orderStatusQuery}`, orderPage)
     ),
     supabaseRequest<EnquirySummaryRow[]>(
-      appendPage(`/rest/v1/shop_enquiries?select=id,status,product_id,product_title,customer_name,customer_email,customer_phone,quantity,selected_options,created_at&order=created_at.desc${enquiryStatusQuery}`, enquiryPage)
+      appendPage(`/rest/v1/shop_enquiries?select=id,status,product_id,product_title,customer_name,customer_email,customer_phone,quantity,selected_options,message,created_at&order=created_at.desc${enquiryStatusQuery}`, enquiryPage)
     ),
     supabaseRequest<InventorySummaryRow[]>(
       appendPage(`/rest/v1/shop_inventory?select=product_id,stock_mode,stock_quantity,sold_quantity,updated_at&order=updated_at.desc${inventoryModeQuery}`, inventoryPage)

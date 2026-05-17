@@ -35,6 +35,7 @@ export interface EnquirySummaryRow {
   customer_phone: string | null
   quantity: number
   selected_options: unknown
+  message: string | null
   created_at: string
 }
 

@@ -133,7 +133,8 @@
 }
 
 .enterButton {
-  justify-self: start;
+  justify-self: end;
+  margin-top: 12px;
 }
 
 .enterButtonContent {
@@ -357,6 +358,10 @@
   align-items: end;
 }
 
+.inventoryForm .textAction {
+  justify-self: end;
+}
+
 .compactField {
   display: grid;
   gap: 8px;
@@ -406,6 +411,12 @@
   }
 }
 
+@media (max-width: 767px) {
+  .input {
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 620px) {
   .metrics,
   .skeletonGrid {
@@ -440,7 +451,7 @@
   }
 
   .actions {
-    justify-content: start;
+    justify-content: end;
   }
 }
 

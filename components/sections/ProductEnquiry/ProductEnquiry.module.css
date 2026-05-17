@@ -160,8 +160,12 @@
     max-width: min(100%, 320px);
   }
 
+  .input {
+    font-size: 16px;
+  }
+
   .submitRow {
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 }
 

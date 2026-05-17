@@ -1122,6 +1122,11 @@ export default function AdminShopDashboard() {
                           <Typography variant="caption" as="p">
                             {getSelectedOptionsLabel(enquiry.selected_options) || enquiry.product_id || 'No options'}
                           </Typography>
+                          {enquiry.message && (
+                            <Typography variant="caption" as="p" color="var(--color-text-muted-mid)">
+                              {enquiry.message}
+                            </Typography>
+                          )}
                         </div>
                       </div>
                       <div className={styles.actions}>
