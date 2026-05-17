@@ -4,6 +4,28 @@ export type AdminOrderStatus = 'pending' | 'paid' | 'cancelled' | 'fulfilled' | 
 export type AdminEnquiryStatus = 'new' | 'contacted' | 'closed'
 export type AdminStockMode = 'unlimited' | 'limited' | 'one_of_one' | 'enquiry_goal'
 
+interface AdminOrderStatusRow {
+  id: string
+  status: AdminOrderStatus
+}
+
+const ORDER_STATUS_TRANSITIONS: Record<AdminOrderStatus, AdminOrderStatus[]> = {
+  pending: ['cancelled'],
+  paid: ['fulfilled', 'refunded'],
+  cancelled: [],
+  fulfilled: ['refunded'],
+  refunded: [],
+}
+
+export class AdminMutationError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message)
+  }
+}
+
 export function isAdminOrderStatus(value: unknown): value is AdminOrderStatus {
   return (
     value === 'pending' ||
@@ -27,6 +49,24 @@ export function isAdminStockMode(value: unknown): value is AdminStockMode {
   )
 }
 
+export function getOrderStatusTransitionError(
+  currentStatus: AdminOrderStatus,
+  nextStatus: AdminOrderStatus
+) {
+  if (currentStatus === nextStatus) return null
+  if (ORDER_STATUS_TRANSITIONS[currentStatus].includes(nextStatus)) return null
+
+  if (currentStatus === 'pending' && (nextStatus === 'fulfilled' || nextStatus === 'refunded')) {
+    return 'Unpaid orders must be paid before they can be fulfilled or refunded.'
+  }
+
+  if (currentStatus === 'cancelled' || currentStatus === 'refunded') {
+    return 'Closed orders cannot be moved to another status from the dashboard.'
+  }
+
+  return `Orders cannot move from ${currentStatus} to ${nextStatus}.`
+}
+
 function sanitizeText(value: unknown) {
   return typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : ''
 }
@@ -37,7 +77,27 @@ function sanitizeInteger(value: unknown) {
   return value
 }
 
+async function getOrderStatus(orderId: string) {
+  const rows = await supabaseRequest<AdminOrderStatusRow[]>(
+    `/rest/v1/shop_orders?id=eq.${encodeURIComponent(orderId)}&select=id,status&limit=1`
+  )
+
+  return rows[0] ?? null
+}
+
 export async function updateOrderStatus(orderId: string, status: AdminOrderStatus) {
+  const order = await getOrderStatus(orderId)
+
+  if (!order) {
+    throw new AdminMutationError('Order could not be found.', 404)
+  }
+
+  const transitionError = getOrderStatusTransitionError(order.status, status)
+
+  if (transitionError) {
+    throw new AdminMutationError(transitionError, 409)
+  }
+
   await supabaseRequest(`/rest/v1/shop_orders?id=eq.${encodeURIComponent(orderId)}`, {
     method: 'PATCH',
     body: { status },

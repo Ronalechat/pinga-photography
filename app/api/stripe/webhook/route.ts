@@ -76,7 +76,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  await markOrderPaid(event.data.object)
+  const result = await markOrderPaid(event.data.object)
+
+  if (result.alreadyPaid) {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
   await sendPaidOrderNotification(event.data.object.id).catch((error: unknown) => {
     console.error('[stripe-webhook] paid order notification failed', error)
   })

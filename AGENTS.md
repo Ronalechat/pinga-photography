@@ -169,10 +169,12 @@ changing shop behaviour.
 - Paid checkout creation must stay behind `SHOP_CHECKOUT_ENABLED=true` until
   webhook handling and Supabase order persistence have been verified.
 - Admin routes must not expose order/customer data unless an auth gate is in
-  place. The temporary summary API uses `SHOP_ADMIN_ACCESS_TOKEN`.
+  place. Admin APIs require the signed `pinga_shop_admin_session` cookie from
+  the PIN login route, and mutating admin routes require the session-derived
+  `X-Pinga-Shop-CSRF` header.
 - Admin summary data includes order line items, customer contact details,
   selected options, inventory, and active reservations. Keep operational actions
-  token-gated, including expired reservation release.
+  behind admin auth, including expired reservation release.
 - Cart UI is scoped to `/shop` only. The cart count must show the total quantity
   once items have been added, and the cart should persist if the visitor returns.
 - There is no arbitrary per-person purchase maximum. Quantity is limited only by

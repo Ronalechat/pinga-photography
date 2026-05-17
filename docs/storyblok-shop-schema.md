@@ -155,3 +155,22 @@ Use as a nested block inside `shop_option_group.values`.
   than undercharge for a framed or international order.
 - Keep product copy short. This layout is designed for scanning several products
   on one shop page.
+
+## Live Supabase Overrides
+
+Storyblok remains the editorial fallback for stock and shipping setup. When
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are available, server-side shop
+helpers can read `shop_inventory`, active `shop_reservations`, and
+`shop_shipping_profiles` before returning product availability or shipping
+quotes.
+
+- `shop_inventory.stock_quantity` is the total available edition/run size.
+  Live availability subtracts `sold_quantity` and active, unexpired
+  reservations.
+- Missing Supabase rows fall back to the Storyblok fields above, so a newly
+  published product can still render before the admin inventory row is seeded.
+- `shop_shipping_profiles` rows override the default rule table one profile at
+  a time. Missing or invalid rows keep the built-in safe defaults.
+- `mode` still controls the product action: use `cart_checkout` for direct cart
+  purchase, `manual_quote` for quote-first products, `enquiry` for interest
+  capture, and `sold_out` when the product should stay visible without checkout.

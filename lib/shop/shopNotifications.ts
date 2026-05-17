@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { getSelectedOptionsLabel } from '@/lib/shop/display'
 import { formatMoney } from '@/lib/shop/money'
 import { supabaseRequest } from '@/lib/shop/supabaseRest'
 
@@ -28,23 +29,6 @@ function escapeHtml(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
-}
-
-function getSelectedOptionsLabel(value: unknown) {
-  if (!Array.isArray(value) || value.length === 0) return ''
-
-  return value
-    .map((option) => {
-      if (!option || typeof option !== 'object') return ''
-      const maybeOption = option as { groupLabel?: unknown; valueLabel?: unknown }
-      const groupLabel = typeof maybeOption.groupLabel === 'string' ? maybeOption.groupLabel : ''
-      const valueLabel = typeof maybeOption.valueLabel === 'string' ? maybeOption.valueLabel : ''
-
-      if (!groupLabel && !valueLabel) return ''
-      return groupLabel ? `${groupLabel}: ${valueLabel}` : valueLabel
-    })
-    .filter(Boolean)
-    .join(' / ')
 }
 
 async function getNotificationOrder(stripeSessionId: string) {

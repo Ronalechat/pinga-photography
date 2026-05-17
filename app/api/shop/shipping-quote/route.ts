@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { calculateShippingQuote } from '@/lib/shop/shipping'
+import { calculateLiveShippingQuote } from '@/lib/shop/shipping'
 import { sanitizeCartLines, sanitizeDestination } from '@/lib/shop/cartValidation'
 
 export const runtime = 'nodejs'
@@ -33,5 +33,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
   }
 
-  return NextResponse.json(calculateShippingQuote(lines, destination))
+  return NextResponse.json(await calculateLiveShippingQuote(lines, destination))
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import ProductMediaViewer from '@/components/ui/ProductMediaViewer/ProductMediaViewer'
 import PingaButton from '@/components/ui/Button/PingaButton'
 import PingaToggle from '@/components/ui/ToggleButton/PingaToggle'
@@ -44,15 +45,19 @@ function getSelectedOptions(product: ShopProductConfig, selections: Record<strin
 }
 
 function stockLabel(product: ShopProductConfig) {
-  if (!product.showStock) return null
-  if (product.stockMode === 'unlimited') return null
-  if (product.stockMode === 'one_of_one') return 'One of a kind'
-  if (product.stockMode === 'enquiry_goal') return null
-  if (typeof product.stockQuantity !== 'number') return 'Limited run'
+  const stockMode = product.liveStock?.stockMode ?? product.stockMode
+  const availableQuantity = product.liveStock?.availableQuantity ?? product.stockQuantity
 
-  if (product.stockQuantity <= 0) return 'Sold out'
-  if (product.stockQuantity === 1) return '1 remaining'
-  return `${product.stockQuantity} remaining`
+  if (product.mode === 'sold_out' || product.liveStock?.soldOut) return 'Sold out'
+  if (!product.showStock) return null
+  if (stockMode === 'unlimited') return null
+  if (stockMode === 'enquiry_goal') return null
+  if (stockMode === 'one_of_one') return 'One of a kind'
+  if (typeof availableQuantity !== 'number') return 'Limited run'
+
+  if (availableQuantity <= 0) return 'Sold out'
+  if (availableQuantity === 1) return '1 remaining'
+  return `${availableQuantity} remaining`
 }
 
 function shippingLabel(product: ShopProductConfig) {
@@ -63,6 +68,15 @@ function shippingLabel(product: ShopProductConfig) {
   if (product.shippingProfile === 'pickup_only') return 'Pickup only'
   if (product.pickupAvailable) return 'Pickup available'
   return 'Shipping calculated before payment'
+}
+
+function enquiryHref(product: ShopProductConfig, intent: 'enquiry' | 'quote' | 'sold_out') {
+  const params = new URLSearchParams({
+    product: product.productId,
+    intent,
+  })
+
+  return `/enquiry?${params.toString()}`
 }
 
 export default function ShopProduct({ product }: ShopProductProps) {
@@ -78,13 +92,29 @@ export default function ShopProduct({ product }: ShopProductProps) {
     total + option.priceDeltaCents
   ), 0)
   const quantityNumber = Math.max(1, Math.floor(Number(quantity) || 1))
-  const finiteStock = product.stockMode === 'limited' || product.stockMode === 'one_of_one'
-  const availableStock = finiteStock ? product.stockQuantity ?? 0 : undefined
-  const soldOut = product.mode === 'sold_out' || (finiteStock && (availableStock ?? 0) <= 0)
-  const canAddToCart = product.mode === 'cart_checkout' && !soldOut
+  const stockMode = product.liveStock?.stockMode ?? product.stockMode
+  const finiteStock = stockMode === 'limited' || stockMode === 'one_of_one'
+  const availableStock = finiteStock
+    ? product.liveStock?.availableQuantity ?? product.stockQuantity ?? 0
+    : undefined
+  const soldOut = (
+    product.mode === 'sold_out' ||
+    Boolean(product.liveStock?.soldOut) ||
+    (finiteStock && (availableStock ?? 0) <= 0)
+  )
+  const actionMode = soldOut ? 'sold_out' : product.mode
+  const canAddToCart = actionMode === 'cart_checkout'
   const maxQuantity = finiteStock ? Math.max(1, availableStock ?? 1) : undefined
   const displayStock = stockLabel(product)
   const displayShipping = shippingLabel(product)
+  const actionHref = enquiryHref(
+    product,
+    actionMode === 'manual_quote'
+      ? 'quote'
+      : actionMode === 'sold_out'
+        ? 'sold_out'
+        : 'enquiry'
+  )
 
   function handleSelection(groupKey: string, value: string | string[]) {
     if (Array.isArray(value)) return
@@ -190,49 +220,71 @@ export default function ShopProduct({ product }: ShopProductProps) {
             )}
           </div>
 
-          <div className={styles.purchase}>
-            <label className={styles.quantityLabel}>
-              <Typography variant="label" as="span">
-                Quantity
-              </Typography>
-              <input
-                type="number"
-                min="1"
-                max={maxQuantity}
-                step="1"
-                inputMode="numeric"
-                value={quantity}
-                disabled={!canAddToCart}
-                onChange={(e) => {
-                  setQuantity(e.target.value)
-                  setAdded(false)
-                }}
-                className={styles.quantityInput}
-              />
-            </label>
+          {canAddToCart ? (
+            <div className={styles.purchase}>
+              <label className={styles.quantityLabel}>
+                <Typography variant="label" as="span">
+                  Quantity
+                </Typography>
+                <input
+                  type="number"
+                  min="1"
+                  max={maxQuantity}
+                  step="1"
+                  inputMode="numeric"
+                  value={quantity}
+                  onChange={(e) => {
+                    setQuantity(e.target.value)
+                    setAdded(false)
+                  }}
+                  className={styles.quantityInput}
+                />
+              </label>
 
-            <PingaButton
-              variant="sweep"
-              type="button"
-              disabled={!canAddToCart}
-              onClick={handleAddToCart}
-            >
-              {soldOut
-                ? 'Sold out'
-                : product.mode === 'manual_quote' || product.requiresManualShippingQuote
-                  ? 'Quote required'
-                  : product.mode === 'enquiry'
-                    ? product.ctaLabel ?? 'Enquire'
-                  : product.ctaLabel ?? 'Add to cart'}
-            </PingaButton>
-          </div>
+              <PingaButton
+                variant="sweep"
+                type="button"
+                onClick={handleAddToCart}
+              >
+                {product.ctaLabel ?? 'Add to cart'}
+              </PingaButton>
+            </div>
+          ) : (
+            <div className={styles.actionPanel}>
+              <div className={styles.actionCopy}>
+                <Typography variant="label" as="p">
+                  {actionMode === 'sold_out'
+                    ? 'Sold out'
+                    : actionMode === 'manual_quote'
+                      ? 'Manual quote'
+                      : 'Available by enquiry'}
+                </Typography>
+                <Typography variant="caption" as="p" color="var(--color-text-muted-mid)">
+                  {actionMode === 'sold_out'
+                    ? 'This piece is no longer available. Ask about future editions or similar work.'
+                    : actionMode === 'manual_quote'
+                      ? 'Paul will confirm availability, freight, and payment details before purchase.'
+                      : 'Send a note and Paul will reply with availability and next steps.'}
+                </Typography>
+              </div>
+              <Link href={actionHref} className={styles.actionLink}>
+                <Typography variant="label" as="span">
+                  {actionMode === 'sold_out'
+                    ? 'Ask about editions'
+                    : actionMode === 'manual_quote'
+                      ? product.ctaLabel ?? 'Request quote'
+                      : product.ctaLabel ?? 'Send enquiry'}
+                </Typography>
+              </Link>
+            </div>
+          )}
 
           {added && (
             <Typography variant="caption" as="p" className={styles.added} role="status">
               Added to cart.
             </Typography>
           )}
-          {(product.mode === 'manual_quote' || product.requiresManualShippingQuote) && (
+          {actionMode === 'cart_checkout' && product.requiresManualShippingQuote && (
             <Typography variant="caption" as="p" color="var(--color-text-muted-mid)">
               This piece needs a manual shipping quote before purchase.
             </Typography>

@@ -135,6 +135,19 @@ create table public.shop_shipping_profiles (
   )
 );
 
+create table public.shop_admin_users (
+  username text primary key,
+  pin_hash text not null,
+  pin_salt text not null,
+  failed_attempts integer not null default 0,
+  locked_until timestamptz,
+  setup_completed_at timestamptz,
+  last_login_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint shop_admin_users_failed_attempts_non_negative check (failed_attempts >= 0)
+);
+
 insert into public.shop_shipping_profiles
   (profile_key, label, base_cents, additional_cents, manual_quote)
 values
@@ -184,6 +197,10 @@ for each row execute function public.set_updated_at();
 
 create trigger shop_shipping_profiles_updated_at
 before update on public.shop_shipping_profiles
+for each row execute function public.set_updated_at();
+
+create trigger shop_admin_users_updated_at
+before update on public.shop_admin_users
 for each row execute function public.set_updated_at();
 
 create or replace function public.shop_create_reservation(
@@ -304,6 +321,60 @@ begin
 end;
 $$;
 
+create or replace function public.shop_create_checkout_reservations(
+  p_stripe_session_id text,
+  p_expires_at timestamptz,
+  p_lines jsonb
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  line_item jsonb;
+  line_quantity integer;
+  created_count integer := 0;
+begin
+  if p_stripe_session_id is null or btrim(p_stripe_session_id) = '' then
+    raise exception 'Stripe session id is required';
+  end if;
+
+  if p_expires_at <= now() then
+    raise exception 'Reservation expiry must be in the future';
+  end if;
+
+  if jsonb_typeof(p_lines) <> 'array' or jsonb_array_length(p_lines) = 0 then
+    raise exception 'Reservation lines are required';
+  end if;
+
+  for line_item in select * from jsonb_array_elements(p_lines)
+  loop
+    if line_item->>'product_id' is null or length(trim(line_item->>'product_id')) = 0 then
+      raise exception 'Reservation product id is required';
+    end if;
+
+    line_quantity := (line_item->>'quantity')::integer;
+
+    if line_quantity is null or line_quantity <= 0 then
+      raise exception 'Reservation quantity must be positive';
+    end if;
+
+    perform public.shop_create_reservation(
+      line_item->>'product_id',
+      coalesce(line_item->>'option_signature', ''),
+      line_quantity,
+      p_stripe_session_id,
+      p_expires_at
+    );
+
+    created_count := created_count + 1;
+  end loop;
+
+  return created_count;
+end;
+$$;
+
 create or replace function public.shop_release_expired_reservations()
 returns integer
 language plpgsql
@@ -344,6 +415,30 @@ begin
 end;
 $$;
 
+-- SECURITY DEFINER RPCs run with elevated table privileges. Keep direct execute
+-- access limited to server-side service-role calls only.
+revoke all on function public.shop_create_reservation(text, text, integer, text, timestamptz)
+  from public, anon, authenticated;
+revoke all on function public.shop_create_checkout_reservations(text, timestamptz, jsonb)
+  from public, anon, authenticated;
+revoke all on function public.shop_convert_reservations(text)
+  from public, anon, authenticated;
+revoke all on function public.shop_release_expired_reservations()
+  from public, anon, authenticated;
+revoke all on function public.shop_release_reservations(text)
+  from public, anon, authenticated;
+
+grant execute on function public.shop_create_reservation(text, text, integer, text, timestamptz)
+  to service_role;
+grant execute on function public.shop_create_checkout_reservations(text, timestamptz, jsonb)
+  to service_role;
+grant execute on function public.shop_convert_reservations(text)
+  to service_role;
+grant execute on function public.shop_release_expired_reservations()
+  to service_role;
+grant execute on function public.shop_release_reservations(text)
+  to service_role;
+
 -- Keep public access closed. Server routes should use the service role key.
 alter table public.shop_inventory enable row level security;
 alter table public.shop_reservations enable row level security;
@@ -351,3 +446,4 @@ alter table public.shop_orders enable row level security;
 alter table public.shop_order_items enable row level security;
 alter table public.shop_enquiries enable row level security;
 alter table public.shop_shipping_profiles enable row level security;
+alter table public.shop_admin_users enable row level security;

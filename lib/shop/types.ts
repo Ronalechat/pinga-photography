@@ -2,6 +2,7 @@ import type { ProductMediaImage } from '@/lib/media/types'
 
 export type ShopProductMode = 'enquiry' | 'cart_checkout' | 'manual_quote' | 'sold_out'
 export type StockMode = 'unlimited' | 'limited' | 'one_of_one' | 'enquiry_goal'
+export type StockAvailabilitySource = 'storyblok' | 'supabase'
 export type ShopOptionDisplay = 'toggle' | 'select'
 export type ShippingProfile =
   | 'shirt'
@@ -33,6 +34,17 @@ export interface SelectedShopOption {
   priceDeltaCents: number
 }
 
+export interface ShopStockAvailability {
+  productId: string
+  source: StockAvailabilitySource
+  stockMode: StockMode
+  stockQuantity?: number
+  soldQuantity: number
+  reservedQuantity: number
+  availableQuantity?: number
+  soldOut: boolean
+}
+
 export interface ShopProductConfig {
   productId: string
   title: string
@@ -44,6 +56,7 @@ export interface ShopProductConfig {
   currency: string
   stockMode: StockMode
   stockQuantity?: number
+  liveStock?: ShopStockAvailability
   showStock?: boolean
   lowStockThreshold?: number
   shippingProfile?: ShippingProfile

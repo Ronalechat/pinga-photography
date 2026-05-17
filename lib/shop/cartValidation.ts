@@ -3,6 +3,7 @@ import {
   type ShippingDestination,
   type ShippingOption,
   type ShippingQuote,
+  type ShippingProfileRules,
 } from '@/lib/shop/shipping'
 import type { CartLine, SelectedShopOption, ShippingProfile } from '@/lib/shop/types'
 
@@ -27,6 +28,10 @@ export interface CheckoutValidationResult {
   shippingQuote: ShippingQuote
   selectedShippingOption?: ShippingOption
   totalCents?: number
+}
+
+export interface CheckoutValidationOptions {
+  shippingRules?: ShippingProfileRules
 }
 
 function sanitizeString(value: unknown, fallback = '') {
@@ -153,14 +158,17 @@ function validateLines(lines: CartLine[]) {
   return errors
 }
 
-export function validateCheckoutInput(input: CheckoutValidationInput): CheckoutValidationResult {
+export function validateCheckoutInput(
+  input: CheckoutValidationInput,
+  options: CheckoutValidationOptions = {}
+): CheckoutValidationResult {
   const lines = sanitizeCartLines(input.lines)
   const destination = sanitizeDestination(input.destination)
   const shippingOptionId = sanitizeString(input.shippingOptionId)
   const errors = validateLines(lines)
   const currency = lines[0]?.currency || DEFAULT_CURRENCY
   const subtotalCents = calculateSubtotal(lines)
-  const shippingQuote = calculateShippingQuote(lines, destination)
+  const shippingQuote = calculateShippingQuote(lines, destination, options.shippingRules)
   let selectedShippingOption: ShippingOption | undefined
 
   if (shippingOptionId) {

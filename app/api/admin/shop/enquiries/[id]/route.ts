@@ -12,7 +12,7 @@ interface RouteContext {
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
-  const authError = getAdminAuthError(req)
+  const authError = getAdminAuthError(req, { requireCsrf: true })
   if (authError) return authError
 
   const setup = getAdminDataSetupStatus()

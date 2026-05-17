@@ -1,14 +1,32 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import PingaButton from '@/components/ui/Button/PingaButton'
 import Typography from '@/components/ui/Typography/Typography'
 import type { ShopAdminSummary } from '@/lib/shop/adminSummary'
+import {
+  getSelectedOptionsLabel,
+  getShippingAddressLabel,
+} from '@/lib/shop/display'
 import { formatMoney } from '@/lib/shop/money'
 import styles from './AdminShopDashboard.module.css'
 
+type AuthStatus = 'checking' | 'login' | 'setup' | 'ready'
 type DashboardStatus = 'idle' | 'loading' | 'ready' | 'setup' | 'unauthorised' | 'error'
 type MutationStatus = 'idle' | 'saving'
+type HistoryStatusFilter = 'all' | string
+
+interface HistoryState {
+  orderStatus: HistoryStatusFilter
+  enquiryStatus: HistoryStatusFilter
+  reservationStatus: HistoryStatusFilter
+  inventoryMode: HistoryStatusFilter
+  ordersOffset: number
+  enquiriesOffset: number
+  reservationsOffset: number
+  inventoryOffset: number
+  limit: number
+}
 
 interface DashboardResponse extends Partial<ShopAdminSummary> {
   error?: string
@@ -16,7 +34,65 @@ interface DashboardResponse extends Partial<ShopAdminSummary> {
   missing?: string[]
 }
 
-const ADMIN_TOKEN_STORAGE_KEY = 'pinga_shop_admin_token'
+interface SessionResponse {
+  authenticated?: boolean
+  username?: string
+  csrfToken?: string
+  setupRequired?: boolean
+}
+
+interface LoginResponse {
+  username?: string
+  csrfToken?: string
+  error?: string
+  setupRequired?: boolean
+}
+
+const DEFAULT_HISTORY: HistoryState = {
+  orderStatus: 'all',
+  enquiryStatus: 'all',
+  reservationStatus: 'active',
+  inventoryMode: 'all',
+  ordersOffset: 0,
+  enquiriesOffset: 0,
+  reservationsOffset: 0,
+  inventoryOffset: 0,
+  limit: 10,
+}
+
+const ORDER_STATUS_OPTIONS = [
+  ['all', 'All orders'],
+  ['pending', 'Pending'],
+  ['paid', 'Paid'],
+  ['fulfilled', 'Fulfilled'],
+  ['refunded', 'Refunded'],
+  ['cancelled', 'Cancelled'],
+] as const
+
+const ENQUIRY_STATUS_OPTIONS = [
+  ['all', 'All enquiries'],
+  ['new', 'New'],
+  ['contacted', 'Contacted'],
+  ['closed', 'Closed'],
+] as const
+
+const RESERVATION_STATUS_OPTIONS = [
+  ['active', 'Active'],
+  ['all', 'All holds'],
+  ['converted', 'Converted'],
+  ['released', 'Released'],
+  ['expired', 'Expired'],
+] as const
+
+const INVENTORY_MODE_OPTIONS = [
+  ['all', 'All stock'],
+  ['limited', 'Limited'],
+  ['one_of_one', 'One of one'],
+  ['unlimited', 'Unlimited'],
+  ['enquiry_goal', 'Enquiry goal'],
+] as const
+
+const PAGE_LIMIT_OPTIONS = [10, 20, 50] as const
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-AU', {
@@ -32,49 +108,35 @@ function getErrorMessage(data: unknown, fallback: string) {
   return response.error || fallback
 }
 
-function getSelectedOptionsLabel(value: unknown) {
-  if (!Array.isArray(value) || value.length === 0) return ''
+function buildSummaryUrl(history: HistoryState) {
+  const params = new URLSearchParams({
+    orderStatus: history.orderStatus,
+    enquiryStatus: history.enquiryStatus,
+    reservationStatus: history.reservationStatus,
+    inventoryMode: history.inventoryMode,
+    ordersLimit: history.limit.toString(),
+    enquiriesLimit: history.limit.toString(),
+    reservationsLimit: history.limit.toString(),
+    inventoryLimit: history.limit.toString(),
+    ordersOffset: history.ordersOffset.toString(),
+    enquiriesOffset: history.enquiriesOffset.toString(),
+    reservationsOffset: history.reservationsOffset.toString(),
+    inventoryOffset: history.inventoryOffset.toString(),
+  })
 
-  return value
-    .map((option) => {
-      if (!option || typeof option !== 'object') return ''
-      const maybeOption = option as { groupLabel?: unknown; valueLabel?: unknown }
-      const groupLabel = typeof maybeOption.groupLabel === 'string' ? maybeOption.groupLabel : ''
-      const valueLabel = typeof maybeOption.valueLabel === 'string' ? maybeOption.valueLabel : ''
-
-      if (!groupLabel && !valueLabel) return ''
-      return groupLabel ? `${groupLabel}: ${valueLabel}` : valueLabel
-    })
-    .filter(Boolean)
-    .join(' / ')
+  return `/api/admin/shop/summary?${params.toString()}`
 }
 
-function getShippingAddressLabel(value: unknown) {
-  if (!value || typeof value !== 'object') return ''
+function canFulfilOrder(status: string) {
+  return status === 'paid'
+}
 
-  const candidate = value as {
-    address?: {
-      line1?: unknown
-      line2?: unknown
-      city?: unknown
-      state?: unknown
-      postal_code?: unknown
-      country?: unknown
-    } | null
-    name?: unknown
-  }
-  const address = candidate.address
+function canRefundOrder(status: string) {
+  return status === 'paid' || status === 'fulfilled'
+}
 
-  if (!address) return ''
-
-  return [
-    typeof address.line1 === 'string' ? address.line1 : '',
-    typeof address.line2 === 'string' ? address.line2 : '',
-    typeof address.city === 'string' ? address.city : '',
-    typeof address.state === 'string' ? address.state : '',
-    typeof address.postal_code === 'string' ? address.postal_code : '',
-    typeof address.country === 'string' ? address.country : '',
-  ].filter(Boolean).join(', ')
+function canCancelOrder(status: string) {
+  return status === 'pending'
 }
 
 function formatReservationExpiry(value: string) {
@@ -98,15 +160,89 @@ function EmptyState({ label }: { label: string }) {
   )
 }
 
+function FilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: ReadonlyArray<readonly [string, string]>
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className={styles.compactField}>
+      <Typography variant="caption" as="span">
+        {label}
+      </Typography>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={styles.input}
+      >
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>
+            {optionLabel}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function PageControls({
+  offset,
+  limit,
+  hasMore,
+  disabled,
+  onChange,
+}: {
+  offset: number
+  limit: number
+  hasMore: boolean
+  disabled: boolean
+  onChange: (offset: number) => void
+}) {
+  return (
+    <div className={styles.actions}>
+      <button
+        type="button"
+        className={styles.textAction}
+        disabled={disabled || offset === 0}
+        onClick={() => onChange(Math.max(0, offset - limit))}
+      >
+        <Typography variant="caption" as="span">
+          Newer
+        </Typography>
+      </button>
+      <button
+        type="button"
+        className={styles.textAction}
+        disabled={disabled || !hasMore}
+        onClick={() => onChange(offset + limit)}
+      >
+        <Typography variant="caption" as="span">
+          Older
+        </Typography>
+      </button>
+    </div>
+  )
+}
+
 export default function AdminShopDashboard() {
-  const [token, setToken] = useState(() => {
-    if (typeof window === 'undefined') return ''
-    return window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? ''
-  })
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('checking')
+  const [authMessage, setAuthMessage] = useState('')
+  const [username, setUsername] = useState('')
+  const [pin, setPin] = useState('')
+  const [setupSecret, setSetupSecret] = useState('')
+  const [activeUser, setActiveUser] = useState('')
+  const [csrfToken, setCsrfToken] = useState('')
   const [summary, setSummary] = useState<ShopAdminSummary | null>(null)
   const [status, setStatus] = useState<DashboardStatus>('idle')
   const [mutationStatus, setMutationStatus] = useState<MutationStatus>('idle')
   const [message, setMessage] = useState('')
+  const [history, setHistory] = useState<HistoryState>(DEFAULT_HISTORY)
   const [inventoryProductId, setInventoryProductId] = useState('')
   const [inventoryMode, setInventoryMode] = useState('limited')
   const [inventoryQuantity, setInventoryQuantity] = useState('')
@@ -119,7 +255,9 @@ export default function AdminShopDashboard() {
       item.stock_quantity === null || item.sold_quantity < item.stock_quantity
     )).length ?? 0
     const pendingOrders = summary?.orders.filter((order) => order.status === 'pending').length ?? 0
-    const activeReservations = summary?.reservations.length ?? 0
+    const activeReservations = summary?.reservations.filter((reservation) => (
+      reservation.status === 'active'
+    )).length ?? 0
 
     return {
       orderCount: summary?.orders.length ?? 0,
@@ -132,19 +270,28 @@ export default function AdminShopDashboard() {
     }
   }, [summary])
 
-  async function handleLoadSummary() {
+  const handleSessionExpiry = useCallback(() => {
+    setSummary(null)
+    setCsrfToken('')
+    setAuthStatus('login')
+    setStatus('unauthorised')
+    setAuthMessage('Your admin session has expired. Log in again to continue.')
+  }, [])
+
+  const handleLoadSummary = useCallback(async () => {
     setStatus('loading')
     setMessage('')
 
     try {
-      const res = await fetch('/api/admin/shop/summary', {
-        headers: {
-          'x-shop-admin-token': token,
-        },
-      })
+      const res = await fetch(buildSummaryUrl(history))
       const data = await res.json().catch(() => null) as unknown
 
       if (!res.ok) {
+        if (res.status === 401) {
+          handleSessionExpiry()
+          return
+        }
+
         const nextStatus: DashboardStatus = res.status === 401
           ? 'unauthorised'
           : data && typeof data === 'object' && (data as DashboardResponse).setupRequired
@@ -159,29 +306,65 @@ export default function AdminShopDashboard() {
       const response = data as ShopAdminSummary
       setSummary(response)
       setStatus('ready')
-      window.sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token)
     } catch {
       setStatus('error')
       setMessage('Shop admin data could not be loaded.')
     }
-  }
+  }, [handleSessionExpiry, history])
+
+  const checkSession = useCallback(async () => {
+    setAuthStatus('checking')
+    setAuthMessage('')
+
+    try {
+      const res = await fetch('/api/admin/shop/session')
+      const data = await res.json().catch(() => null) as unknown
+
+      if (res.ok && data && typeof data === 'object' && (data as SessionResponse).authenticated) {
+        const response = data as SessionResponse
+        const nextUser = response.username ?? ''
+        setActiveUser(nextUser)
+        setCsrfToken(response.csrfToken ?? '')
+        setAuthStatus('ready')
+        return
+      }
+
+      setAuthStatus('login')
+      if (data && typeof data === 'object' && (data as SessionResponse).setupRequired) {
+        setAuthMessage('Admin login is not fully configured yet.')
+      }
+    } catch {
+      setAuthStatus('login')
+      setAuthMessage('Admin session could not be checked.')
+    }
+  }, [])
 
   async function handleMutation(path: string, body: unknown) {
     setMutationStatus('saving')
     setMessage('')
 
     try {
+      if (!csrfToken) {
+        setMessage('Admin request could not be verified. Refresh the dashboard and try again.')
+        return
+      }
+
       const res = await fetch(path, {
         method: path.endsWith('/inventory') || path.endsWith('/release-expired') ? 'POST' : 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-shop-admin-token': token,
+          'X-Pinga-Shop-CSRF': csrfToken,
         },
         body: JSON.stringify(body),
       })
       const data = await res.json().catch(() => null) as unknown
 
       if (!res.ok) {
+        if (res.status === 401) {
+          handleSessionExpiry()
+          return
+        }
+
         setMessage(getErrorMessage(data, 'Shop admin update failed.'))
         setStatus(data && typeof data === 'object' && (data as DashboardResponse).setupRequired
           ? 'setup'
@@ -218,6 +401,164 @@ export default function AdminShopDashboard() {
     return handleMutation('/api/admin/shop/reservations/release-expired', {})
   }
 
+  function updateHistory(patch: Partial<HistoryState>) {
+    setHistory((current) => ({
+      ...current,
+      ...patch,
+    }))
+  }
+
+  function updateHistoryFilter(patch: Partial<HistoryState>) {
+    setHistory((current) => ({
+      ...current,
+      ...patch,
+      ordersOffset: patch.orderStatus === undefined ? current.ordersOffset : 0,
+      enquiriesOffset: patch.enquiryStatus === undefined ? current.enquiriesOffset : 0,
+      reservationsOffset: patch.reservationStatus === undefined ? current.reservationsOffset : 0,
+      inventoryOffset: patch.inventoryMode === undefined ? current.inventoryOffset : 0,
+    }))
+  }
+
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setAuthMessage('')
+
+    try {
+      const res = await fetch('/api/admin/shop/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          pin,
+          setupSecret: authStatus === 'setup' ? setupSecret : undefined,
+        }),
+      })
+      const data = await res.json().catch(() => null) as unknown
+      const response = data && typeof data === 'object' ? data as LoginResponse : null
+
+      if (!res.ok) {
+        if (response?.setupRequired) setAuthStatus('setup')
+        setAuthMessage(response?.error ?? 'Login could not be verified.')
+        return
+      }
+
+      setPin('')
+      setSetupSecret('')
+      setActiveUser(response?.username ?? username)
+      setCsrfToken(response?.csrfToken ?? '')
+      setAuthStatus('ready')
+    } catch {
+      setAuthMessage('Login could not be verified.')
+    }
+  }
+
+  async function handleLogout() {
+    await fetch('/api/admin/shop/logout', { method: 'POST' }).catch(() => undefined)
+    setSummary(null)
+    setActiveUser('')
+    setCsrfToken('')
+    setPin('')
+    setSetupSecret('')
+    setStatus('idle')
+    setAuthStatus('login')
+  }
+
+  useEffect(() => {
+    void checkSession()
+  }, [checkSession])
+
+  useEffect(() => {
+    if (authStatus === 'ready') void handleLoadSummary()
+  }, [authStatus, handleLoadSummary])
+
+  if (authStatus === 'checking') {
+    return (
+      <section className={styles.root} aria-labelledby="shop-admin-dashboard">
+        <div className={styles.skeletonGrid} aria-hidden="true">
+          <div className={styles.skeleton} />
+          <div className={styles.skeleton} />
+          <div className={styles.skeleton} />
+        </div>
+      </section>
+    )
+  }
+
+  if (authStatus === 'login' || authStatus === 'setup') {
+    return (
+      <section className={styles.root} aria-labelledby="shop-admin-dashboard">
+        <div className={styles.header}>
+          <div className={styles.headerCopy}>
+            <Typography variant="eyebrow" as="h2" id="shop-admin-dashboard">
+              Dashboard login
+            </Typography>
+            <Typography variant="body" as="p" color="var(--color-text-muted-high)">
+              Enter your admin name and six digit code to load shop data.
+            </Typography>
+          </div>
+
+          <form className={styles.auth} onSubmit={handleLogin}>
+            <label className={styles.tokenField}>
+              <Typography variant="caption" as="span">
+                Username
+              </Typography>
+              <input
+                type="text"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                className={styles.input}
+                autoComplete="username"
+                spellCheck={false}
+              />
+            </label>
+
+            <label className={styles.tokenField}>
+              <Typography variant="caption" as="span">
+                Code
+              </Typography>
+              <input
+                type="password"
+                value={pin}
+                onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                className={[styles.input, styles.pinInput].join(' ')}
+                inputMode="numeric"
+                autoComplete="current-password"
+              />
+            </label>
+
+            {authStatus === 'setup' && (
+              <label className={styles.tokenField}>
+                <Typography variant="caption" as="span">
+                  Setup key
+                </Typography>
+                <input
+                  type="password"
+                  value={setupSecret}
+                  onChange={(event) => setSetupSecret(event.target.value)}
+                  className={styles.input}
+                  autoComplete="one-time-code"
+                />
+              </label>
+            )}
+
+            <PingaButton
+              variant="ghost"
+              type="submit"
+              disabled={!username || pin.length !== 6}
+            >
+              {authStatus === 'setup' ? 'Set code' : 'Log in'}
+            </PingaButton>
+          </form>
+        </div>
+
+        {authMessage && (
+          <Typography variant="caption" as="p" role="status" className={styles.notice}>
+            {authMessage}
+          </Typography>
+        )}
+      </section>
+    )
+  }
+
   return (
     <section className={styles.root} aria-labelledby="shop-admin-dashboard">
       <div className={styles.header}>
@@ -226,31 +567,25 @@ export default function AdminShopDashboard() {
             Dashboard
           </Typography>
           <Typography variant="body" as="p" color="var(--color-text-muted-high)">
-            Load live shop data with the admin token. Nothing is fetched until the
-            token is submitted.
+            Live shop data is loaded for signed-in admins only.
           </Typography>
         </div>
 
-        <div className={styles.auth}>
-          <label className={styles.tokenField}>
+        <div className={styles.authSession}>
+          <div>
             <Typography variant="caption" as="span">
-              Admin token
+              Signed in
             </Typography>
-            <input
-              type="password"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              className={styles.input}
-              autoComplete="off"
-            />
-          </label>
+            <Typography variant="body" as="p">
+              {activeUser}
+            </Typography>
+          </div>
           <PingaButton
             variant="ghost"
             type="button"
-            disabled={status === 'loading' || !token}
-            onClick={handleLoadSummary}
+            onClick={handleLogout}
           >
-            {status === 'loading' ? 'Loading...' : 'Load data'}
+            Log out
           </PingaButton>
         </div>
       </div>
@@ -276,6 +611,65 @@ export default function AdminShopDashboard() {
 
       {summary && status === 'ready' && (
         <>
+          <div className={styles.historyControls}>
+            <FilterSelect
+              label="Orders"
+              value={history.orderStatus}
+              options={ORDER_STATUS_OPTIONS}
+              onChange={(value) => updateHistoryFilter({ orderStatus: value })}
+            />
+            <FilterSelect
+              label="Enquiries"
+              value={history.enquiryStatus}
+              options={ENQUIRY_STATUS_OPTIONS}
+              onChange={(value) => updateHistoryFilter({ enquiryStatus: value })}
+            />
+            <FilterSelect
+              label="Reservations"
+              value={history.reservationStatus}
+              options={RESERVATION_STATUS_OPTIONS}
+              onChange={(value) => updateHistoryFilter({ reservationStatus: value })}
+            />
+            <FilterSelect
+              label="Stock"
+              value={history.inventoryMode}
+              options={INVENTORY_MODE_OPTIONS}
+              onChange={(value) => updateHistoryFilter({ inventoryMode: value })}
+            />
+            <label className={styles.compactField}>
+              <Typography variant="caption" as="span">
+                Rows
+              </Typography>
+              <select
+                value={history.limit}
+                onChange={(event) => updateHistory({
+                  limit: Number(event.target.value),
+                  ordersOffset: 0,
+                  enquiriesOffset: 0,
+                  reservationsOffset: 0,
+                  inventoryOffset: 0,
+                })}
+                className={styles.input}
+              >
+                {PAGE_LIMIT_OPTIONS.map((limit) => (
+                  <option key={limit} value={limit}>
+                    {limit}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className={styles.textAction}
+              disabled={mutationStatus === 'saving'}
+              onClick={() => handleLoadSummary()}
+            >
+              <Typography variant="caption" as="span">
+                Refresh
+              </Typography>
+            </button>
+          </div>
+
           <div className={styles.metrics}>
             <div className={styles.metric}>
               <Typography variant="caption" as="p" color="var(--color-text-muted-mid)">
@@ -329,9 +723,18 @@ export default function AdminShopDashboard() {
 
           <div className={styles.tables}>
             <section className={styles.tableSection} aria-labelledby="admin-orders">
-              <Typography variant="eyebrow" as="h3" id="admin-orders">
-                Recent orders
-              </Typography>
+              <div className={styles.sectionHeader}>
+                <Typography variant="eyebrow" as="h3" id="admin-orders">
+                  Orders
+                </Typography>
+                <PageControls
+                  offset={summary.pagination?.orders.offset ?? 0}
+                  limit={summary.pagination?.orders.limit ?? history.limit}
+                  hasMore={summary.pagination?.orders.hasMore ?? false}
+                  disabled={mutationStatus === 'saving'}
+                  onChange={(offset) => updateHistory({ ordersOffset: offset })}
+                />
+              </div>
               {summary.orders.length === 0 ? (
                 <EmptyState label="No orders yet." />
               ) : (
@@ -400,10 +803,22 @@ export default function AdminShopDashboard() {
                       )}
 
                       <div className={styles.actions}>
+                        {canCancelOrder(order.status) && (
+                          <button
+                            type="button"
+                            className={styles.textAction}
+                            disabled={mutationStatus === 'saving'}
+                            onClick={() => updateOrder(order.id, 'cancelled')}
+                          >
+                            <Typography variant="caption" as="span">
+                              Cancel
+                            </Typography>
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={styles.textAction}
-                          disabled={mutationStatus === 'saving'}
+                          disabled={mutationStatus === 'saving' || !canFulfilOrder(order.status)}
                           onClick={() => updateOrder(order.id, 'fulfilled')}
                         >
                           <Typography variant="caption" as="span">
@@ -413,7 +828,7 @@ export default function AdminShopDashboard() {
                         <button
                           type="button"
                           className={styles.textAction}
-                          disabled={mutationStatus === 'saving'}
+                          disabled={mutationStatus === 'saving' || !canRefundOrder(order.status)}
                           onClick={() => updateOrder(order.id, 'refunded')}
                         >
                           <Typography variant="caption" as="span">
@@ -428,9 +843,18 @@ export default function AdminShopDashboard() {
             </section>
 
             <section className={styles.tableSection} aria-labelledby="admin-enquiries">
-              <Typography variant="eyebrow" as="h3" id="admin-enquiries">
-                Recent enquiries
-              </Typography>
+              <div className={styles.sectionHeader}>
+                <Typography variant="eyebrow" as="h3" id="admin-enquiries">
+                  Enquiries
+                </Typography>
+                <PageControls
+                  offset={summary.pagination?.enquiries.offset ?? 0}
+                  limit={summary.pagination?.enquiries.limit ?? history.limit}
+                  hasMore={summary.pagination?.enquiries.hasMore ?? false}
+                  disabled={mutationStatus === 'saving'}
+                  onChange={(offset) => updateHistory({ enquiriesOffset: offset })}
+                />
+              </div>
               {summary.enquiries.length === 0 ? (
                 <EmptyState label="No enquiries yet." />
               ) : (
@@ -504,18 +928,27 @@ export default function AdminShopDashboard() {
             <section className={styles.tableSection} aria-labelledby="admin-reservations">
               <div className={styles.sectionHeader}>
                 <Typography variant="eyebrow" as="h3" id="admin-reservations">
-                  Active reservations
+                  Reservations
                 </Typography>
-                <button
-                  type="button"
-                  className={styles.textAction}
-                  disabled={mutationStatus === 'saving'}
-                  onClick={releaseExpiredReservationRows}
-                >
-                  <Typography variant="caption" as="span">
-                    Release expired
-                  </Typography>
-                </button>
+                <div className={styles.headerActions}>
+                  <PageControls
+                    offset={summary.pagination?.reservations.offset ?? 0}
+                    limit={summary.pagination?.reservations.limit ?? history.limit}
+                    hasMore={summary.pagination?.reservations.hasMore ?? false}
+                    disabled={mutationStatus === 'saving'}
+                    onChange={(offset) => updateHistory({ reservationsOffset: offset })}
+                  />
+                  <button
+                    type="button"
+                    className={styles.textAction}
+                    disabled={mutationStatus === 'saving'}
+                    onClick={releaseExpiredReservationRows}
+                  >
+                    <Typography variant="caption" as="span">
+                      Release expired
+                    </Typography>
+                  </button>
+                </div>
               </div>
               {summary.reservations.length === 0 ? (
                 <EmptyState label="No held stock right now." />
@@ -543,9 +976,18 @@ export default function AdminShopDashboard() {
 
             <section className={styles.tableSection} aria-labelledby="admin-inventory">
               <div className={styles.sectionHeader}>
-                <Typography variant="eyebrow" as="h3" id="admin-inventory">
-                  Inventory
-                </Typography>
+                <div>
+                  <Typography variant="eyebrow" as="h3" id="admin-inventory">
+                    Inventory
+                  </Typography>
+                  <PageControls
+                    offset={summary.pagination?.inventory.offset ?? 0}
+                    limit={summary.pagination?.inventory.limit ?? history.limit}
+                    hasMore={summary.pagination?.inventory.hasMore ?? false}
+                    disabled={mutationStatus === 'saving'}
+                    onChange={(offset) => updateHistory({ inventoryOffset: offset })}
+                  />
+                </div>
                 <div className={styles.inventoryForm}>
                   <label className={styles.compactField}>
                     <Typography variant="caption" as="span">

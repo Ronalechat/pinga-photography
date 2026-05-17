@@ -57,9 +57,23 @@ export interface ReservationSummaryRow {
   created_at: string
 }
 
+export interface AdminSummaryPageInfo {
+  limit: number
+  offset: number
+  hasMore: boolean
+}
+
+export interface AdminSummaryPagination {
+  orders: AdminSummaryPageInfo
+  enquiries: AdminSummaryPageInfo
+  inventory: AdminSummaryPageInfo
+  reservations: AdminSummaryPageInfo
+}
+
 export interface ShopAdminSummary {
   orders: OrderSummaryRow[]
   enquiries: EnquirySummaryRow[]
   inventory: InventorySummaryRow[]
   reservations: ReservationSummaryRow[]
+  pagination?: AdminSummaryPagination
 }

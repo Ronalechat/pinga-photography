@@ -81,9 +81,16 @@ completed, and converts to sold stock after the Stripe webhook confirms payment.
 Supabase provides the atomic reservation functions:
 
 - `shop_create_reservation`
+- `shop_create_checkout_reservations`
 - `shop_convert_reservations`
 - `shop_release_expired_reservations`
 - `shop_release_reservations`
+
+`shop_create_checkout_reservations` should be used by checkout code. It wraps
+all reservation lines for a Stripe session in one Supabase RPC call so a partial
+cart reservation cannot survive if any line fails. The lower-level
+`shop_create_reservation` function remains available to the RPC and for
+maintenance use, but direct execute access is limited to the service role.
 
 ## Shipping
 
@@ -134,8 +141,17 @@ webhook handling and Supabase order persistence are verified, even if Stripe key
 are already present.
 
 Before redirecting to Stripe, checkout creates a pending Supabase order and order
-items. If reservation creation fails for a limited product, the checkout URL is
-not returned.
+items. The order id is sent to Stripe as `client_reference_id` and
+`metadata.shop_order_id`, then the returned Stripe Checkout Session id is written
+back to the pending order before reservations are created. If session linking or
+reservation creation fails, checkout releases active reservations for the
+session, cancels the pending order, and attempts to expire the Stripe Checkout
+Session before returning an error instead of a checkout URL.
+
+The paid webhook is idempotent. It first verifies that the Stripe session maps
+to a matching pending order, converts active reservations, and only then marks
+the order paid. Duplicate paid webhooks are acknowledged without sending a
+second order notification.
 
 ## Admin
 
@@ -150,21 +166,24 @@ after checkout works:
 - shipping details
 - fulfilment status
 
-The setup shell lives at `/admin/shop` and is marked noindex. It must remain a
-status-only surface until authentication and Supabase reads are implemented.
+The admin shell lives at `/admin/shop` and is marked noindex. It stays hidden
+from public navigation and requires a signed admin session before returning
+customer, order, enquiry, or inventory data.
 
-The protected summary endpoint is `/api/admin/shop/summary`. It requires the
-`x-shop-admin-token` header to match `SHOP_ADMIN_ACCESS_TOKEN` and should be
-replaced by a real login flow before Paul uses the dashboard day to day.
+The protected summary endpoint is `/api/admin/shop/summary`. Admin access uses
+username + six digit PIN login, with PIN hashes stored in Supabase and a signed
+HttpOnly cookie named `pinga_shop_admin_session`.
 
-`/admin/shop` includes a temporary token prompt and stores the token in
-`sessionStorage` for the current browser session only. This keeps the dashboard
-useful for staging without making the token a permanent browser credential.
+First-time PIN setup is only available for usernames listed in
+`SHOP_ADMIN_USERNAMES` and requires `SHOP_ADMIN_SETUP_SECRET`. Failed attempts
+are tracked in Supabase and temporarily lock the account after repeated misses.
 
-The dashboard summary includes recent order line items, selected options,
-customer contact details, shipping labels/addresses, inventory rows, and active
-reservations. It also includes a maintenance action to expire old active
-reservations by calling Supabase's `shop_release_expired_reservations` function.
+The dashboard summary includes paginated order line items, selected options,
+customer contact details, shipping labels/addresses, inventory rows, and
+reservations. `GET /api/admin/shop/summary` accepts status filters and
+limit/offset query parameters for orders, enquiries, inventory, and
+reservations so the dashboard can page into older operational records without a
+separate export flow.
 
 Protected admin mutations:
 
@@ -175,6 +194,11 @@ Protected admin mutations:
   Storyblok product IDs.
 - `POST /api/admin/shop/reservations/release-expired` releases expired stock
   holds.
+
+Mutating admin routes require the signed session cookie plus the
+`X-Pinga-Shop-CSRF` header returned by the login/session APIs. Order status
+changes are validated server-side: unpaid `pending` orders can be cancelled, but
+cannot be fulfilled or refunded from the dashboard.
 
 Admin order status changes do not call Stripe. A future refund flow must use a
 Stripe refund API action rather than treating the local `refunded` status as

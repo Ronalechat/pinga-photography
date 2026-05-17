@@ -1,4 +1,8 @@
-import { validateCheckoutInput, type CheckoutValidationInput } from '@/lib/shop/cartValidation'
+import {
+  validateCheckoutInput,
+  type CheckoutValidationInput,
+  type CheckoutValidationOptions,
+} from '@/lib/shop/cartValidation'
 import { getProductMap, getShopCatalog } from '@/lib/shop/catalog'
 import type {
   CartLine,
@@ -60,16 +64,18 @@ function buildAuthoritativeLine(
     })
   }
 
-  const finiteStock = product.stockMode === 'limited' || product.stockMode === 'one_of_one'
+  const stockMode = product.liveStock?.stockMode ?? product.stockMode
+  const stockQuantity = product.liveStock?.availableQuantity ?? product.stockQuantity
+  const finiteStock = stockMode === 'limited' || stockMode === 'one_of_one'
 
-  if (finiteStock && typeof product.stockQuantity === 'number') {
-    if (product.stockQuantity <= 0) {
+  if (finiteStock && typeof stockQuantity === 'number') {
+    if (stockQuantity <= 0) {
       errors.push(`${product.title} is sold out.`)
       return null
     }
 
-    if (submittedLine.quantity > product.stockQuantity) {
-      errors.push(`${product.title} only has ${product.stockQuantity} available.`)
+    if (submittedLine.quantity > stockQuantity) {
+      errors.push(`${product.title} only has ${stockQuantity} available.`)
       return null
     }
   }
@@ -99,9 +105,10 @@ function buildAuthoritativeLine(
 }
 
 export async function revalidateCheckoutInput(
-  input: CheckoutValidationInput
+  input: CheckoutValidationInput,
+  options: CheckoutValidationOptions = {}
 ): Promise<RevalidatedCheckout> {
-  const initialValidation = validateCheckoutInput(input)
+  const initialValidation = validateCheckoutInput(input, options)
   const errors = [...initialValidation.errors]
   const products = await getShopCatalog()
   const productMap = getProductMap(products)
@@ -121,7 +128,9 @@ export async function revalidateCheckoutInput(
     if (authoritativeLine) {
       authoritativeLines.push(authoritativeLine)
 
-      if (product.stockMode === 'limited' || product.stockMode === 'one_of_one') {
+      const stockMode = product.liveStock?.stockMode ?? product.stockMode
+
+      if (stockMode === 'limited' || stockMode === 'one_of_one') {
         requiresStockReservation = true
         reservationLines.push(authoritativeLine)
       }
@@ -132,7 +141,7 @@ export async function revalidateCheckoutInput(
     lines: authoritativeLines,
     destination: input.destination,
     shippingOptionId: input.shippingOptionId,
-  })
+  }, options)
   const combinedErrors = errors.length > 0 ? errors : validation.errors
 
   return {

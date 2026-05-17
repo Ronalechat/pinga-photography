@@ -80,6 +80,50 @@
   flex-wrap: wrap;
 }
 
+.actionPanel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.actionCopy {
+  display: grid;
+  gap: var(--space-xs);
+  max-width: 44ch;
+}
+
+.actionLink {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--color-text-primary);
+  color: var(--color-text-primary);
+  padding: 10px 18px;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard);
+}
+
+.actionLink:hover {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+}
+
+.actionLink span {
+  color: inherit;
+}
+
+.actionLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .quantityLabel {
   display: grid;
   gap: var(--space-sm);
@@ -106,7 +150,7 @@
 
 .quantityInput:focus {
   background: var(--color-bg-input-focus);
-  border-color: rgba(179, 179, 186, 0.6);
+  border-color: var(--color-border-hover);
 }
 
 .quantityInput:focus-visible {
@@ -155,10 +199,20 @@
   .purchase {
     align-items: stretch;
   }
+
+  .actionPanel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .actionLink {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .quantityInput {
+  .quantityInput,
+  .actionLink {
     transition: none;
   }
 }

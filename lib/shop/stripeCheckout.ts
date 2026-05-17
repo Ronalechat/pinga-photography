@@ -4,6 +4,7 @@ import type { CartLine } from '@/lib/shop/types'
 export interface StripeCheckoutSessionInput {
   lines: CartLine[]
   shippingOption: ShippingOption
+  orderId: string
   successUrl: string
   cancelUrl: string
 }
@@ -74,6 +75,7 @@ function appendShippingOption(params: URLSearchParams, shippingOption: ShippingO
 export async function createStripeCheckoutSession({
   lines,
   shippingOption,
+  orderId,
   successUrl,
   cancelUrl,
 }: StripeCheckoutSessionInput): Promise<StripeCheckoutSession> {
@@ -89,7 +91,9 @@ export async function createStripeCheckoutSession({
   params.append('cancel_url', cancelUrl)
   params.append('phone_number_collection[enabled]', 'true')
   params.append('shipping_address_collection[allowed_countries][0]', 'AU')
+  params.append('client_reference_id', orderId)
   params.append('metadata[source]', 'pinga_shop')
+  params.append('metadata[shop_order_id]', orderId)
 
   lines.forEach((line, index) => appendLineItem(params, line, index))
   appendShippingOption(params, shippingOption)
@@ -124,5 +128,29 @@ export async function createStripeCheckoutSession({
   return {
     id: data.id,
     url: data.url,
+  }
+}
+
+export async function expireStripeCheckoutSession(sessionId: string) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+
+  if (!stripeSecretKey) return
+
+  const response = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}/expire`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${stripeSecretKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  )
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null) as unknown
+    const message = getStripeErrorMessage(data) ?? 'Stripe Checkout session could not be expired.'
+
+    throw new StripeCheckoutError(message, response.status)
   }
 }

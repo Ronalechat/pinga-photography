@@ -1,4 +1,5 @@
 import type { CartLine, ShippingProfile } from '@/lib/shop/types'
+import { hasSupabaseConfig, supabaseRequest } from '@/lib/shop/supabaseRest'
 
 export type ShippingDestination = {
   country: string
@@ -21,18 +22,40 @@ export interface ShippingQuote {
   options: ShippingOption[]
   requiresManualQuote: boolean
   message?: string
+  profileSource?: ShippingProfileSource
 }
 
-interface ShippingRule {
+export type ShippingProfileSource = 'default' | 'supabase'
+
+export interface ShippingRule {
   baseCents: number
   additionalCents: number
   manualQuote?: boolean
   label: string
 }
 
+export type ShippingProfileRules = Record<ShippingProfile, ShippingRule>
+
+export interface ShippingProfileReadModel {
+  source: ShippingProfileSource
+  rules: ShippingProfileRules
+}
+
+interface ShippingProfileRow {
+  profile_key: unknown
+  label: string
+  base_cents: number
+  additional_cents: number
+  manual_quote: boolean
+}
+
+interface ValidShippingProfileRow extends ShippingProfileRow {
+  profile_key: ShippingProfile
+}
+
 const DEFAULT_CURRENCY = 'AUD'
 
-const SHIPPING_RULES: Record<ShippingProfile, ShippingRule> = {
+const DEFAULT_SHIPPING_RULES: ShippingProfileRules = {
   shirt: {
     baseCents: 1200,
     additionalCents: 300,
@@ -67,6 +90,69 @@ const SHIPPING_RULES: Record<ShippingProfile, ShippingRule> = {
   },
 }
 
+function isShippingProfile(value: unknown): value is ShippingProfile {
+  return (
+    value === 'shirt' ||
+    value === 'unframed_print' ||
+    value === 'framed_print' ||
+    value === 'oversized' ||
+    value === 'pickup_only' ||
+    value === 'manual_quote'
+  )
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+}
+
+function sanitizeShippingProfileRows(rows: ShippingProfileRow[]): ValidShippingProfileRow[] {
+  return rows.filter((row): row is ValidShippingProfileRow => (
+    isShippingProfile(row.profile_key) &&
+    typeof row.label === 'string' &&
+    row.label.trim().length > 0 &&
+    isNonNegativeInteger(row.base_cents) &&
+    isNonNegativeInteger(row.additional_cents) &&
+    typeof row.manual_quote === 'boolean'
+  ))
+}
+
+export async function getShippingProfileReadModel(): Promise<ShippingProfileReadModel> {
+  if (!hasSupabaseConfig()) {
+    return {
+      source: 'default',
+      rules: DEFAULT_SHIPPING_RULES,
+    }
+  }
+
+  try {
+    const rows = await supabaseRequest<ShippingProfileRow[]>(
+      '/rest/v1/shop_shipping_profiles?select=profile_key,label,base_cents,additional_cents,manual_quote'
+    )
+    const rules: ShippingProfileRules = { ...DEFAULT_SHIPPING_RULES }
+    let hasLiveProfile = false
+
+    for (const row of sanitizeShippingProfileRows(rows)) {
+      hasLiveProfile = true
+      rules[row.profile_key] = {
+        label: row.label,
+        baseCents: row.base_cents,
+        additionalCents: row.additional_cents,
+        manualQuote: row.manual_quote,
+      }
+    }
+
+    return {
+      source: hasLiveProfile ? 'supabase' : 'default',
+      rules,
+    }
+  } catch {
+    return {
+      source: 'default',
+      rules: DEFAULT_SHIPPING_RULES,
+    }
+  }
+}
+
 function isAustralia(country: string) {
   const normalized = country.trim().toLowerCase()
   return normalized === 'au' || normalized === 'australia'
@@ -80,12 +166,16 @@ function getCurrency(lines: CartLine[]) {
   return lines[0]?.currency || DEFAULT_CURRENCY
 }
 
-function needsManualQuote(lines: CartLine[], destination: ShippingDestination) {
+function needsManualQuote(
+  lines: CartLine[],
+  destination: ShippingDestination,
+  rules: ShippingProfileRules
+) {
   if (!isAustralia(destination.country)) return true
 
   return lines.some((line) => {
     const profile = getProfile(line)
-    return line.requiresManualShippingQuote || SHIPPING_RULES[profile].manualQuote
+    return line.requiresManualShippingQuote || rules[profile].manualQuote
   })
 }
 
@@ -95,7 +185,7 @@ function allPickupAvailable(lines: CartLine[]) {
   ))
 }
 
-function calculateDeliveryCents(lines: CartLine[]) {
+function calculateDeliveryCents(lines: CartLine[], rules: ShippingProfileRules) {
   let highestBase = 0
   let additional = 0
   let nonCombinableTotal = 0
@@ -105,7 +195,7 @@ function calculateDeliveryCents(lines: CartLine[]) {
     const profile = getProfile(line)
     if (profile === 'pickup_only') continue
 
-    const rule = SHIPPING_RULES[profile]
+    const rule = rules[profile]
     if (rule.manualQuote) continue
 
     if (line.canCombineShipping === false) {
@@ -130,7 +220,8 @@ function calculateDeliveryCents(lines: CartLine[]) {
 
 export function calculateShippingQuote(
   lines: CartLine[],
-  destination: ShippingDestination
+  destination: ShippingDestination,
+  rules: ShippingProfileRules = DEFAULT_SHIPPING_RULES
 ): ShippingQuote {
   const currency = getCurrency(lines)
 
@@ -143,7 +234,7 @@ export function calculateShippingQuote(
     }
   }
 
-  if (needsManualQuote(lines, destination)) {
+  if (needsManualQuote(lines, destination, rules)) {
     return {
       currency,
       requiresManualQuote: true,
@@ -176,7 +267,7 @@ export function calculateShippingQuote(
     id: 'au-standard',
     kind: 'delivery',
     label: 'Australia standard shipping',
-    amountCents: calculateDeliveryCents(lines),
+    amountCents: calculateDeliveryCents(lines, rules),
     currency,
     description: destination.postcode
       ? `Estimated for postcode ${destination.postcode}.`
@@ -198,5 +289,16 @@ export function calculateShippingQuote(
     currency,
     options,
     requiresManualQuote: false,
+  }
+}
+
+export async function calculateLiveShippingQuote(
+  lines: CartLine[],
+  destination: ShippingDestination
+) {
+  const readModel = await getShippingProfileReadModel()
+  return {
+    ...calculateShippingQuote(lines, destination, readModel.rules),
+    profileSource: readModel.source,
   }
 }

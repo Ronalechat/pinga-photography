@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { CheckoutValidationInput } from '@/lib/shop/cartValidation'
 import { revalidateCheckoutInput } from '@/lib/shop/checkoutRevalidation'
 import {
+  attachStripeSessionToPendingOrder,
   createCheckoutReservations,
   createPendingOrder,
   markPendingOrderCancelled,
+  markPendingOrderCancelledById,
+  releaseCheckoutReservations,
 } from '@/lib/shop/orderPersistence'
 import { getCheckoutSetupStatus } from '@/lib/shop/setupStatus'
 import {
   createStripeCheckoutSession,
+  expireStripeCheckoutSession,
   StripeCheckoutError,
 } from '@/lib/shop/stripeCheckout'
+import { getShippingProfileReadModel } from '@/lib/shop/shipping'
 
 export const runtime = 'nodejs'
 
@@ -39,7 +44,8 @@ export async function POST(req: NextRequest) {
   let checkout
 
   try {
-    checkout = await revalidateCheckoutInput(body)
+    const shippingProfiles = await getShippingProfileReadModel()
+    checkout = await revalidateCheckoutInput(body, { shippingRules: shippingProfiles.rules })
   } catch {
     return NextResponse.json({
       error: 'Current shop products could not be verified. Please try again.',
@@ -89,30 +95,45 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = getBaseUrl(req)
 
+  let order: Awaited<ReturnType<typeof createPendingOrder>>
+
+  try {
+    order = await createPendingOrder({
+      lines: validation.lines,
+      destination: validation.destination,
+      shippingOption: validation.selectedShippingOption,
+      subtotalCents: validation.subtotalCents,
+      totalCents: validation.totalCents ?? validation.subtotalCents,
+      currency: validation.currency,
+    })
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error
+        ? error.message
+        : 'Order could not be prepared before checkout.',
+    }, { status: 409 })
+  }
+
   try {
     const session = await createStripeCheckoutSession({
       lines: validation.lines,
       shippingOption: validation.selectedShippingOption,
+      orderId: order.id,
       successUrl: `${baseUrl}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${baseUrl}/shop/checkout/cancel`,
     })
 
     try {
-      await createPendingOrder({
-        stripeSessionId: session.id,
-        lines: validation.lines,
-        destination: validation.destination,
-        shippingOption: validation.selectedShippingOption,
-        subtotalCents: validation.subtotalCents,
-        totalCents: validation.totalCents ?? validation.subtotalCents,
-        currency: validation.currency,
-      })
+      await attachStripeSessionToPendingOrder(order.id, session.id)
 
       if (checkout.reservationLines.length > 0) {
         await createCheckoutReservations(session.id, checkout.reservationLines)
       }
     } catch (error) {
+      await releaseCheckoutReservations(session.id).catch(() => undefined)
       await markPendingOrderCancelled(session.id).catch(() => undefined)
+      await markPendingOrderCancelledById(order.id).catch(() => undefined)
+      await expireStripeCheckoutSession(session.id).catch(() => undefined)
 
       return NextResponse.json({
         error: error instanceof Error
@@ -123,6 +144,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(session)
   } catch (error) {
+    await markPendingOrderCancelledById(order.id).catch(() => undefined)
+
     if (error instanceof StripeCheckoutError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

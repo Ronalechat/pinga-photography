@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuthError } from '@/lib/shop/adminAuth'
-import { isAdminOrderStatus, updateOrderStatus } from '@/lib/shop/adminMutations'
+import { AdminMutationError, isAdminOrderStatus, updateOrderStatus } from '@/lib/shop/adminMutations'
 import { getAdminDataSetupStatus } from '@/lib/shop/setupStatus'
 
 export const runtime = 'nodejs'
@@ -12,7 +12,7 @@ interface RouteContext {
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
-  const authError = getAdminAuthError(req)
+  const authError = getAdminAuthError(req, { requireCsrf: true })
   if (authError) return authError
 
   const setup = getAdminDataSetupStatus()
@@ -34,7 +34,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   }
 
   const { id } = await context.params
-  await updateOrderStatus(id, status)
+  try {
+    await updateOrderStatus(id, status)
+  } catch (error) {
+    if (error instanceof AdminMutationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
+    throw error
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -6,7 +6,7 @@ import { getAdminDataSetupStatus } from '@/lib/shop/setupStatus'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-  const authError = getAdminAuthError(req)
+  const authError = getAdminAuthError(req, { requireCsrf: true })
   if (authError) return authError
 
   const setup = getAdminDataSetupStatus()

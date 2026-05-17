@@ -52,7 +52,9 @@ SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 SHOP_CHECKOUT_ENABLED=false
-SHOP_ADMIN_ACCESS_TOKEN=
+SHOP_ADMIN_USERNAMES=
+SHOP_ADMIN_SESSION_SECRET=
+SHOP_ADMIN_SETUP_SECRET=
 ```
 
 For the staging deploy, set `NEXT_PUBLIC_SITE_ENV=staging` in Netlify. The
@@ -63,6 +65,8 @@ Shop setup notes:
 - Storyblok schema: `docs/storyblok-shop-schema.md`
 - Supabase schema: `docs/supabase-shop-schema.sql`
 - Checkout/admin environment: `docs/shop-environment.md`
+- Admin PIN auth migration: `docs/supabase-admin-auth-migration.sql`
+- Checkout hardening migration: `docs/supabase-shop-hardening-migration.sql`
 
 ### 3. HTTPS certificates (optional)
 

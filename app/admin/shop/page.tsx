@@ -37,11 +37,11 @@ const SHOP_AREAS = [
 
 const SETUP_STEPS = [
   'Run docs/supabase-shop-schema.sql in Supabase.',
+  'Run docs/supabase-admin-auth-migration.sql in Supabase for existing projects.',
   'Add Supabase environment variables in Netlify.',
-  'Add a shop admin access token before any order data is exposed.',
+  'Add admin username, session secret, and setup secret environment variables.',
   'Add Stripe environment variables when checkout is ready.',
   'Test Stripe webhook delivery and paid order persistence.',
-  'Protect this route before real customer data is shown.',
 ]
 
 export default function ShopAdminPage() {
@@ -59,7 +59,7 @@ export default function ShopAdminPage() {
             </Typography>
             <Typography variant="bodyLarge" as="p" color="var(--color-text-muted-high)">
               This page is ready for Paul&apos;s shop dashboard once Supabase and
-              the admin token are connected. Paid checkout stays disabled until
+              admin PIN login are connected. Paid checkout stays disabled until
               Stripe and webhook handling are verified.
             </Typography>
           </div>
@@ -115,8 +115,8 @@ export default function ShopAdminPage() {
             </Typography>
             <Typography variant="body" as="p" color="var(--color-text-muted-high)">
               The admin summary API is available at `/api/admin/shop/summary`,
-              but it only returns order data when `SHOP_ADMIN_ACCESS_TOKEN` is
-              configured and sent as an `x-shop-admin-token` header.
+              but it only returns order data after a signed admin session cookie
+              is created by the login route.
             </Typography>
           </section>
 

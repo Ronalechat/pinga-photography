@@ -3,7 +3,6 @@ import type { CartLine, SelectedShopOption } from '@/lib/shop/types'
 import { supabaseRequest } from '@/lib/shop/supabaseRest'
 
 export interface PendingOrderInput {
-  stripeSessionId: string
   lines: CartLine[]
   destination: ShippingDestination
   shippingOption: ShippingOption
@@ -14,6 +13,7 @@ export interface PendingOrderInput {
 
 export interface StripeCompletedSession {
   id: string
+  client_reference_id?: string | null
   customer_details?: {
     email?: string | null
     name?: string | null
@@ -27,7 +27,14 @@ export interface StripeCompletedSession {
 
 interface ShopOrderRow {
   id: string
-  stripe_session_id: string
+  stripe_session_id: string | null
+  status: 'pending' | 'paid' | 'cancelled' | 'fulfilled' | 'refunded'
+}
+
+interface ReservationRpcLine {
+  product_id: string
+  option_signature: string
+  quantity: number
 }
 
 function optionSignature(options: SelectedShopOption[]) {
@@ -43,7 +50,6 @@ function getReservationExpiry() {
 }
 
 export async function createPendingOrder({
-  stripeSessionId,
   lines,
   destination,
   shippingOption,
@@ -56,7 +62,6 @@ export async function createPendingOrder({
     prefer: 'return=representation',
     body: {
       status: 'pending',
-      stripe_session_id: stripeSessionId,
       currency,
       subtotal_cents: subtotalCents,
       shipping_cents: shippingOption.amountCents,
@@ -75,21 +80,43 @@ export async function createPendingOrder({
     throw new Error('Pending order could not be created.')
   }
 
-  await supabaseRequest('/rest/v1/shop_order_items', {
-    method: 'POST',
-    body: lines.map((line) => ({
-      order_id: order.id,
-      product_id: line.productId,
-      title: line.title,
-      quantity: line.quantity,
-      unit_amount_cents: line.unitPriceCents,
-      currency: line.currency,
-      selected_options: line.selectedOptions,
-      option_signature: optionSignature(line.selectedOptions),
-    })),
-  })
+  try {
+    await supabaseRequest('/rest/v1/shop_order_items', {
+      method: 'POST',
+      body: lines.map((line) => ({
+        order_id: order.id,
+        product_id: line.productId,
+        title: line.title,
+        quantity: line.quantity,
+        unit_amount_cents: line.unitPriceCents,
+        currency: line.currency,
+        selected_options: line.selectedOptions,
+        option_signature: optionSignature(line.selectedOptions),
+      })),
+    })
+  } catch (error) {
+    await markPendingOrderCancelledById(order.id).catch(() => undefined)
+    throw error
+  }
 
   return order
+}
+
+export async function attachStripeSessionToPendingOrder(orderId: string, stripeSessionId: string) {
+  const orders = await supabaseRequest<ShopOrderRow[]>(
+    `/rest/v1/shop_orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending`,
+    {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: {
+        stripe_session_id: stripeSessionId,
+      },
+    }
+  )
+
+  if (!orders[0]) {
+    throw new Error('Pending order could not be linked to Stripe Checkout.')
+  }
 }
 
 export async function createCheckoutReservations(
@@ -97,24 +124,40 @@ export async function createCheckoutReservations(
   lines: CartLine[]
 ) {
   const expiresAt = getReservationExpiry()
+  const reservationLines: ReservationRpcLine[] = lines.map((line) => ({
+    product_id: line.productId,
+    option_signature: optionSignature(line.selectedOptions),
+    quantity: line.quantity,
+  }))
 
-  for (const line of lines) {
-    await supabaseRequest('/rest/v1/rpc/shop_create_reservation', {
+  try {
+    await supabaseRequest('/rest/v1/rpc/shop_create_checkout_reservations', {
       method: 'POST',
       body: {
-        p_product_id: line.productId,
-        p_option_signature: optionSignature(line.selectedOptions),
-        p_quantity: line.quantity,
         p_stripe_session_id: stripeSessionId,
         p_expires_at: expiresAt,
+        p_lines: reservationLines,
       },
     })
+  } catch (error) {
+    await releaseCheckoutReservations(stripeSessionId).catch(() => undefined)
+    throw error
   }
 }
 
 export async function markPendingOrderCancelled(stripeSessionId: string) {
   await supabaseRequest(
-    `/rest/v1/shop_orders?stripe_session_id=eq.${encodeURIComponent(stripeSessionId)}`,
+    `/rest/v1/shop_orders?stripe_session_id=eq.${encodeURIComponent(stripeSessionId)}&status=eq.pending`,
+    {
+      method: 'PATCH',
+      body: { status: 'cancelled' },
+    }
+  )
+}
+
+export async function markPendingOrderCancelledById(orderId: string) {
+  await supabaseRequest(
+    `/rest/v1/shop_orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending`,
     {
       method: 'PATCH',
       body: { status: 'cancelled' },
@@ -131,15 +174,68 @@ export async function releaseCheckoutReservations(stripeSessionId: string) {
   })
 }
 
+async function getOrderByStripeSessionId(stripeSessionId: string) {
+  const orders = await supabaseRequest<ShopOrderRow[]>(
+    `/rest/v1/shop_orders?select=id,status,stripe_session_id&stripe_session_id=eq.${encodeURIComponent(stripeSessionId)}&limit=1`
+  )
+
+  return orders[0] ?? null
+}
+
+async function getOrderById(orderId: string) {
+  const orders = await supabaseRequest<ShopOrderRow[]>(
+    `/rest/v1/shop_orders?select=id,status,stripe_session_id&id=eq.${encodeURIComponent(orderId)}&limit=1`
+  )
+
+  return orders[0] ?? null
+}
+
+async function getOrderForPaidSession(session: StripeCompletedSession) {
+  const orderBySession = await getOrderByStripeSessionId(session.id)
+
+  if (orderBySession) return orderBySession
+  if (!session.client_reference_id) return null
+
+  const orderByReference = await getOrderById(session.client_reference_id)
+  if (!orderByReference) return null
+  if (orderByReference.stripe_session_id && orderByReference.stripe_session_id !== session.id) {
+    return null
+  }
+
+  return orderByReference
+}
+
 export async function markOrderPaid(session: StripeCompletedSession) {
+  const order = await getOrderForPaidSession(session)
+
+  if (!order) {
+    throw new Error(`No matching shop order found for Stripe session ${session.id}.`)
+  }
+
+  if (order.status === 'paid') {
+    return { orderId: order.id, alreadyPaid: true }
+  }
+
+  if (order.status !== 'pending') {
+    throw new Error(`Stripe session ${session.id} matched a non-pending shop order.`)
+  }
+
   const customer = session.customer_details
 
+  await supabaseRequest('/rest/v1/rpc/shop_convert_reservations', {
+    method: 'POST',
+    body: {
+      p_stripe_session_id: session.id,
+    },
+  })
+
   await supabaseRequest(
-    `/rest/v1/shop_orders?stripe_session_id=eq.${encodeURIComponent(session.id)}`,
+    `/rest/v1/shop_orders?id=eq.${encodeURIComponent(order.id)}&status=eq.pending`,
     {
       method: 'PATCH',
       body: {
         status: 'paid',
+        stripe_session_id: session.id,
         customer_email: customer?.email ?? null,
         customer_name: customer?.name ?? null,
         customer_phone: customer?.phone ?? null,
@@ -151,10 +247,5 @@ export async function markOrderPaid(session: StripeCompletedSession) {
     }
   )
 
-  await supabaseRequest('/rest/v1/rpc/shop_convert_reservations', {
-    method: 'POST',
-    body: {
-      p_stripe_session_id: session.id,
-    },
-  })
+  return { orderId: order.id, alreadyPaid: false }
 }

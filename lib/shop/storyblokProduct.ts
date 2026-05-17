@@ -1,5 +1,6 @@
 import type { SbBlokData } from '@storyblok/react/rsc'
 import type {
+  ShopStockAvailability,
   ShopOptionDisplay,
   ShopOptionGroup,
   ShopProductConfig,
@@ -7,6 +8,7 @@ import type {
   ShippingProfile,
   StockMode,
 } from '@/lib/shop/types'
+import { hasSupabaseConfig, supabaseRequest } from '@/lib/shop/supabaseRest'
 
 interface SbAsset {
   filename: string
@@ -53,6 +55,18 @@ export interface ShopProductBlokShape extends SbBlokData {
   cta_label?: string
 }
 
+interface SupabaseInventoryRow {
+  product_id: string
+  stock_mode: StockMode
+  stock_quantity: number | null
+  sold_quantity: number
+}
+
+interface SupabaseReservationRow {
+  product_id: string
+  quantity: number
+}
+
 function toNumber(value: number | string | undefined, fallback = 0) {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (typeof value === 'string' && value.trim()) {
@@ -86,6 +100,15 @@ function toStockMode(value: StockMode | undefined): StockMode {
   }
 
   return 'unlimited'
+}
+
+function isStockMode(value: unknown): value is StockMode {
+  return (
+    value === 'unlimited' ||
+    value === 'limited' ||
+    value === 'one_of_one' ||
+    value === 'enquiry_goal'
+  )
 }
 
 function toShippingProfile(value: ShippingProfile | undefined): ShippingProfile | undefined {
@@ -165,4 +188,156 @@ export function mapShopProductBlok(blok: ShopProductBlokShape): ShopProductConfi
     optionGroups: mapOptionGroups(blok.option_groups),
     ctaLabel: blok.cta_label || undefined,
   }
+}
+
+function isFiniteStockMode(stockMode: StockMode) {
+  return stockMode === 'limited' || stockMode === 'one_of_one'
+}
+
+function calculateAvailableQuantity(
+  stockMode: StockMode,
+  stockQuantity: number | undefined,
+  soldQuantity: number,
+  reservedQuantity: number
+) {
+  if (!isFiniteStockMode(stockMode)) return undefined
+  return Math.max(0, (stockQuantity ?? 0) - soldQuantity - reservedQuantity)
+}
+
+function createStockAvailability(
+  productId: string,
+  stockMode: StockMode,
+  stockQuantity: number | undefined,
+  soldQuantity: number,
+  reservedQuantity: number,
+  source: ShopStockAvailability['source']
+): ShopStockAvailability {
+  const availableQuantity = calculateAvailableQuantity(
+    stockMode,
+    stockQuantity,
+    soldQuantity,
+    reservedQuantity
+  )
+
+  return {
+    productId,
+    source,
+    stockMode,
+    stockQuantity,
+    soldQuantity,
+    reservedQuantity,
+    availableQuantity,
+    soldOut: availableQuantity !== undefined && availableQuantity <= 0,
+  }
+}
+
+function escapePostgrestListValue(value: string) {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+function productIdFilter(productIds: string[]) {
+  return encodeURIComponent(`in.(${productIds.map(escapePostgrestListValue).join(',')})`)
+}
+
+function storyblokStockAvailability(product: ShopProductConfig): ShopStockAvailability {
+  return createStockAvailability(
+    product.productId,
+    product.stockMode,
+    product.stockQuantity,
+    0,
+    0,
+    'storyblok'
+  )
+}
+
+function sanitizeInventoryRows(rows: SupabaseInventoryRow[]) {
+  return rows.filter((row) => (
+    typeof row.product_id === 'string' &&
+    isStockMode(row.stock_mode) &&
+    (row.stock_quantity === null || Number.isSafeInteger(row.stock_quantity)) &&
+    Number.isSafeInteger(row.sold_quantity)
+  ))
+}
+
+function sanitizeReservationRows(rows: SupabaseReservationRow[]) {
+  return rows.filter((row) => (
+    typeof row.product_id === 'string' &&
+    Number.isSafeInteger(row.quantity) &&
+    row.quantity > 0
+  ))
+}
+
+export function getStoryblokStockAvailability(product: ShopProductConfig) {
+  return storyblokStockAvailability(product)
+}
+
+export function applyStockAvailability(
+  product: ShopProductConfig,
+  availability: ShopStockAvailability
+): ShopProductConfig {
+  return {
+    ...product,
+    liveStock: availability,
+  }
+}
+
+export async function getLiveStockAvailability(products: ShopProductConfig[]) {
+  const fallback = new Map(
+    products.map((product) => [product.productId, storyblokStockAvailability(product)])
+  )
+  const productIds = Array.from(new Set(products.map((product) => product.productId)))
+
+  if (productIds.length === 0 || !hasSupabaseConfig()) return fallback
+
+  try {
+    const filter = productIdFilter(productIds)
+    const now = encodeURIComponent(new Date().toISOString())
+    const [inventoryRows, reservationRows] = await Promise.all([
+      supabaseRequest<SupabaseInventoryRow[]>(
+        `/rest/v1/shop_inventory?select=product_id,stock_mode,stock_quantity,sold_quantity&product_id=${filter}`
+      ),
+      supabaseRequest<SupabaseReservationRow[]>(
+        `/rest/v1/shop_reservations?select=product_id,quantity&product_id=${filter}&status=eq.active&expires_at=gt.${now}`
+      ),
+    ])
+    const reservedByProduct = new Map<string, number>()
+
+    for (const row of sanitizeReservationRows(reservationRows)) {
+      reservedByProduct.set(
+        row.product_id,
+        (reservedByProduct.get(row.product_id) ?? 0) + row.quantity
+      )
+    }
+
+    const availability = new Map(fallback)
+
+    for (const row of sanitizeInventoryRows(inventoryRows)) {
+      availability.set(
+        row.product_id,
+        createStockAvailability(
+          row.product_id,
+          row.stock_mode,
+          row.stock_quantity ?? undefined,
+          Math.max(0, row.sold_quantity),
+          reservedByProduct.get(row.product_id) ?? 0,
+          'supabase'
+        )
+      )
+    }
+
+    return availability
+  } catch {
+    return fallback
+  }
+}
+
+export async function applyLiveStockAvailability(products: ShopProductConfig[]) {
+  const availability = await getLiveStockAvailability(products)
+
+  return products.map((product) => (
+    applyStockAvailability(
+      product,
+      availability.get(product.productId) ?? storyblokStockAvailability(product)
+    )
+  ))
 }

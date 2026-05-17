@@ -136,9 +136,19 @@ export function getAdminDashboardSetupStatus() {
       configured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     },
     {
-      key: 'admin-access-token',
-      label: 'Shop admin access token',
-      configured: Boolean(process.env.SHOP_ADMIN_ACCESS_TOKEN),
+      key: 'admin-usernames',
+      label: 'Shop admin usernames',
+      configured: Boolean(process.env.SHOP_ADMIN_USERNAMES),
+    },
+    {
+      key: 'admin-session-secret',
+      label: 'Shop admin session secret',
+      configured: Boolean(process.env.SHOP_ADMIN_SESSION_SECRET),
+    },
+    {
+      key: 'admin-setup-secret',
+      label: 'Shop admin setup secret',
+      configured: Boolean(process.env.SHOP_ADMIN_SETUP_SECRET),
     },
   ]
 
@@ -172,9 +182,19 @@ export function getAdminSetupStatus() {
       configured: process.env.SHOP_CHECKOUT_ENABLED === 'true',
     },
     {
-      key: 'admin-access-token',
-      label: 'Shop admin access token',
-      configured: Boolean(process.env.SHOP_ADMIN_ACCESS_TOKEN),
+      key: 'admin-usernames',
+      label: 'Shop admin usernames',
+      configured: Boolean(process.env.SHOP_ADMIN_USERNAMES),
+    },
+    {
+      key: 'admin-session-secret',
+      label: 'Shop admin session secret',
+      configured: Boolean(process.env.SHOP_ADMIN_SESSION_SECRET),
+    },
+    {
+      key: 'admin-setup-secret',
+      label: 'Shop admin setup secret',
+      configured: Boolean(process.env.SHOP_ADMIN_SETUP_SECRET),
     },
   ]
 

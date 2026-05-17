@@ -1,6 +1,7 @@
 import type { SbBlokData } from '@storyblok/react/rsc'
 import { getStoryblokApi, getVersion } from '@/utils/storyblok'
 import {
+  applyLiveStockAvailability,
   mapShopProductBlok,
   type ShopProductBlokShape,
 } from '@/lib/shop/storyblokProduct'
@@ -24,9 +25,11 @@ export async function getShopCatalog() {
   const response = await sb.get('cdn/stories/shop', { version }) as ShopStoryResponse
   const body = response.data?.story?.content?.body ?? []
 
-  return body
+  const products = body
     .filter((blok): blok is ShopProductBlokShape => blok.component === 'shop_product')
     .map(mapShopProductBlok)
+
+  return applyLiveStockAvailability(products)
 }
 
 export function getProductMap(products: ShopProductConfig[]) {
