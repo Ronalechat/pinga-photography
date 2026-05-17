@@ -85,6 +85,18 @@ function getGenericAuthError() {
   return 'Login could not be verified.'
 }
 
+function getAdminSupabaseError(error: SupabaseRestError) {
+  if (error.status === 404) {
+    return 'Shop admin user table is not installed.'
+  }
+
+  if (error.status === 401 || error.status === 403) {
+    return 'Shop admin data could not be accessed. Check the Supabase service role key.'
+  }
+
+  return 'Shop admin login could not be checked. Check the Netlify function logs.'
+}
+
 function signPayload(payload: string) {
   return base64Url(createHmac('sha256', getSessionSecret()).update(payload).digest())
 }
@@ -353,11 +365,16 @@ export async function verifyAdminPinLogin(input: {
 
     return { ok: true, username }
   } catch (error) {
-    if (error instanceof SupabaseRestError && error.status === 404) {
+    if (error instanceof SupabaseRestError) {
+      console.error('[shop-admin-auth] Supabase login check failed', {
+        status: error.status,
+        message: error.message,
+      })
+
       return {
         ok: false,
-        setupRequired: true,
-        error: 'Shop admin user table is not installed.',
+        setupRequired: error.status === 404,
+        error: getAdminSupabaseError(error),
       }
     }
 
