@@ -3,7 +3,6 @@ import type { ProductMediaImage } from '@/lib/media/types'
 export type ShopProductMode = 'enquiry' | 'cart_checkout' | 'manual_quote' | 'sold_out'
 export type StockMode = 'unlimited' | 'limited' | 'one_of_one' | 'enquiry_goal'
 export type StockAvailabilitySource = 'storyblok' | 'supabase'
-export type ShopOptionDisplay = 'toggle' | 'select'
 export type ShippingProfile =
   | 'shirt'
   | 'unframed_print'
@@ -21,8 +20,6 @@ export interface ShopOptionValue {
 export interface ShopOptionGroup {
   key: string
   label: string
-  display?: ShopOptionDisplay
-  required?: boolean
   values: ShopOptionValue[]
 }
 
@@ -58,7 +55,6 @@ export interface ShopProductConfig {
   stockQuantity?: number
   liveStock?: ShopStockAvailability
   showStock?: boolean
-  lowStockThreshold?: number
   shippingProfile?: ShippingProfile
   shippingNote?: string
   weightGrams?: number

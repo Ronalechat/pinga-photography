@@ -6,8 +6,8 @@
  */
 
 .root {
-  margin: var(--space-xl) auto var(--space-xxl);
-  max-width: 880px;
+  width: min(100%, 420px);
+  margin: var(--space-xl) 0 var(--space-xxl) auto;
   border-top: 0.5px solid var(--color-border-divider);
   border-bottom: 0.5px solid var(--color-border-divider);
 }
@@ -18,9 +18,47 @@
   min-height: 44px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-lg);
+  justify-content: flex-end;
   cursor: pointer;
+}
+
+.toggleLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+.cartIcon {
+  position: relative;
+  width: 18px;
+  height: 15px;
+  border: 1px solid currentColor;
+  border-top: 0;
+  color: var(--color-text-primary);
+  opacity: 0.82;
+}
+
+.cartIcon::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: -6px;
+  height: 8px;
+  border: 1px solid currentColor;
+  border-bottom: 0;
+}
+
+.cartIcon::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: -5px;
+  height: 2px;
+  border-left: 2px solid currentColor;
+  border-right: 2px solid currentColor;
 }
 
 .toggle:focus-visible,
@@ -45,6 +83,7 @@
 .panel {
   display: grid;
   gap: var(--space-lg);
+  justify-items: stretch;
   padding: var(--space-lg) 0 var(--space-xl);
 }
 
@@ -212,7 +251,12 @@
 
 @media (max-width: 767px) {
   .root {
-    margin: var(--space-xl) auto;
+    margin: var(--space-xl) 0 var(--space-xl) auto;
+  }
+
+  .quantityInput,
+  .deliveryInput {
+    font-size: 16px;
   }
 
   .line {

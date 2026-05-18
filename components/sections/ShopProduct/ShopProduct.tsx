@@ -44,6 +44,18 @@ function getSelectedOptions(product: ShopProductConfig, selections: Record<strin
   }, [])
 }
 
+function optionToggleLabel(
+  option: ShopProductConfig['optionGroups'][number]['values'][number] | undefined,
+  currency: string
+) {
+  if (!option) return ''
+  const delta = option.priceDeltaCents ?? 0
+
+  return delta > 0
+    ? `${option.label} +${formatMoney(delta, currency)}`
+    : option.label
+}
+
 function stockLabel(product: ShopProductConfig) {
   const stockMode = product.liveStock?.stockMode ?? product.stockMode
   const availableQuantity = product.liveStock?.availableQuantity ?? product.stockQuantity
@@ -174,7 +186,7 @@ export default function ShopProduct({ product }: ShopProductProps) {
               {formatMoney(unitPriceCents, product.currency)}
             </Typography>
             {product.subtitle && (
-              <Typography variant="body" as="p" className={styles.subtitle}>
+              <Typography variant="bodyLarge" as="p" className={styles.subtitle}>
                 {product.subtitle}
               </Typography>
             )}
@@ -193,16 +205,24 @@ export default function ShopProduct({ product }: ShopProductProps) {
                     {group.label}
                   </Typography>
                   <PingaToggle
-                    options={group.values.map((value) => value.label)}
+                    options={group.values.map((value) => (
+                      optionToggleLabel(value, product.currency)
+                    ))}
                     selected={
-                      group.values.find((value) => value.key === selections[group.key])?.label ??
-                      group.values[0]?.label ??
+                      optionToggleLabel(
+                        group.values.find((value) => value.key === selections[group.key]) ??
+                          group.values[0],
+                        product.currency
+                      ) ??
                       ''
                     }
                     onChange={(value) => {
-                      const selectedValue = group.values.find((option) => option.label === value)
+                      const selectedValue = group.values.find((option) => (
+                        optionToggleLabel(option, product.currency) === value
+                      ))
                       if (selectedValue) handleSelection(group.key, selectedValue.key)
                     }}
+                    variant="primary"
                   />
                 </div>
               ))}
@@ -210,11 +230,11 @@ export default function ShopProduct({ product }: ShopProductProps) {
           )}
 
           <div className={styles.meta}>
-            <Typography variant="caption" as="p">
+            <Typography variant="meta" as="p">
               {displayShipping}
             </Typography>
             {product.requiresManualShippingQuote && (
-              <Typography variant="caption" as="p" color="var(--color-text-muted-mid)">
+              <Typography variant="meta" as="p" color="var(--color-text-muted-mid)">
                 Paul will confirm freight before payment.
               </Typography>
             )}
@@ -245,8 +265,9 @@ export default function ShopProduct({ product }: ShopProductProps) {
                 variant="sweep"
                 type="button"
                 onClick={handleAddToCart}
+                className={styles.purchaseButton}
               >
-                {product.ctaLabel ?? 'Add to cart'}
+                Add to cart
               </PingaButton>
             </div>
           ) : (

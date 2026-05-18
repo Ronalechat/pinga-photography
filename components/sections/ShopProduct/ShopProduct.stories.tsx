@@ -56,7 +56,6 @@ export const LimitedPrint: Story = {
         {
           key: 'frame',
           label: 'Frame',
-          display: 'toggle',
           values: [
             { key: 'none', label: 'No frame' },
             { key: 'wood', label: 'Wood frame', priceDeltaCents: 3000 },

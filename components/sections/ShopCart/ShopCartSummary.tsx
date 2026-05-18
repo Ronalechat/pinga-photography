@@ -171,14 +171,17 @@ export default function ShopCartSummary() {
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
       >
-        <Typography variant="eyebrow" as="span">
-          Cart
-        </Typography>
-        {itemCount > 0 && (
-          <Typography variant="caption" as="span" className={styles.count} aria-live="polite">
-            {itemCount}
+        <span className={styles.toggleLabel}>
+          <span className={styles.cartIcon} aria-hidden="true" />
+          <Typography variant="eyebrow" as="span">
+            Cart
           </Typography>
-        )}
+          {itemCount > 0 && (
+            <Typography variant="caption" as="span" className={styles.count} aria-live="polite">
+              {itemCount}
+            </Typography>
+          )}
+        </span>
       </button>
 
       {open && (

@@ -41,7 +41,6 @@ shown in the shop.
 | `stock_mode` | Single-option | Yes | `unlimited`, `limited`, `one_of_one`, `enquiry_goal`. |
 | `stock_quantity` | Number | Conditional | Required for `limited` and `one_of_one`. |
 | `show_stock` | Boolean | No | Show remaining/edition language in the UI. |
-| `low_stock_threshold` | Number | No | Future admin/display hook. |
 | `shipping_profile` | Single-option | No | See shipping profiles below. |
 | `shipping_note` | Text | No | Optional display copy, e.g. `Pickup available in Sydney`. |
 | `weight_grams` | Number | No | Used later by the shipping quote engine. |
@@ -91,8 +90,6 @@ Use as a nested block inside `shop_product.option_groups`.
 | --- | --- | --- | --- |
 | `key` | Text | Yes | Stable key, e.g. `frame`. |
 | `label` | Text | Yes | UI label, e.g. `Frame`. |
-| `display` | Single-option | No | `toggle` or `select`. Current UI uses toggle styling. |
-| `required` | Boolean | No | Defaults to selected first option. |
 | `values` | Blocks | Yes | Use `shop_option_value`. |
 
 ## `shop_option_value`
@@ -126,7 +123,6 @@ Use as a nested block inside `shop_option_group.values`.
 
 - `key`: `frame`
 - `label`: `Frame`
-- `display`: `toggle`
 
 `shop_option_value`
 
@@ -155,6 +151,94 @@ Use as a nested block inside `shop_option_group.values`.
   than undercharge for a framed or international order.
 - Keep product copy short. This layout is designed for scanning several products
   on one shop page.
+
+## Storyblok Authoring Guide
+
+The clean version of the shop schema keeps Paul-facing editing simple:
+
+- `product_enquiry` is for demand capture products, such as the first shirt.
+- `shop_product` is for products that can go into cart checkout or manual quote.
+- `shop_option_group` and `shop_option_value` only exist inside `shop_product`.
+  They should not be added directly to a page body.
+
+### If you are currently creating `shop_option_value`
+
+Finish that block with only these fields:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `key` | Text | Yes | Stable machine key, e.g. `wood`, `black`, `none`. |
+| `label` | Text | Yes | Human label shown to customers, e.g. `Wood frame`. |
+| `price_delta_cents` | Number | No | Extra option price in cents, e.g. `3000` for `$30`. Use `0` for no extra cost. |
+
+Then create `shop_option_group`:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `key` | Text | Yes | Stable machine key, e.g. `frame`. |
+| `label` | Text | Yes | Human label shown above the choices, e.g. `Frame`. |
+| `values` | Blocks | Yes | Restrict allowed blocks to `shop_option_value`. |
+
+Then create or update `shop_product`:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `product_id` | Text | Yes | Stable machine key. Do not change after launch. |
+| `title` | Text | Yes | Product title. |
+| `subtitle` | Textarea | No | Short supporting line. |
+| `description` | Textarea | No | Longer product copy. |
+| `images` | Assets | No | Multi-asset image field. First image is the cart thumbnail. |
+| `mode` | Single-option | Yes | `enquiry`, `cart_checkout`, `manual_quote`, `sold_out`. |
+| `price_cents` | Number | Yes | Base product price in cents. |
+| `currency` | Single-option | Yes | Start with `AUD`. |
+| `stock_mode` | Single-option | Yes | `unlimited`, `limited`, `one_of_one`, `enquiry_goal`. |
+| `stock_quantity` | Number | Conditional | Set for `limited` and `one_of_one`. |
+| `show_stock` | Boolean | No | Show remaining/edition text. |
+| `shipping_profile` | Single-option | No | Start with `shirt`, `unframed_print`, `framed_print`, `oversized`, `pickup_only`, or `manual_quote`. |
+| `shipping_note` | Text | No | Short visible note, such as `Pickup available in Sydney`. |
+| `requires_manual_shipping_quote` | Boolean | No | Use when checkout should wait for shipping confirmation. |
+| `pickup_available` | Boolean | No | Enables local pickup language/options. |
+| `option_groups` | Blocks | No | Restrict allowed blocks to `shop_option_group`. |
+| `cta_label` | Text | No | Optional button label override. |
+
+Put these advanced shipping fields lower in the Storyblok form. They are useful
+for future rate calculation, but Paul should not need to think about them for
+every product:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `weight_grams` | Number | No | Packed product weight. |
+| `package_length_mm` | Number | No | Packed parcel length. |
+| `package_width_mm` | Number | No | Packed parcel width. |
+| `package_height_mm` | Number | No | Packed parcel height. |
+| `can_combine_shipping` | Boolean | No | Whether multiple units can share packaging. |
+
+### Page setup
+
+In the existing `page` component body field, allow these blocks:
+
+- `product_enquiry`
+- `shop_product`
+
+Do not allow `shop_option_group` or `shop_option_value` in the page body. They
+belong inside `shop_product` only.
+
+On the `/shop` story, add one block per product:
+
+- Use `product_enquiry` for the shirt demand form.
+- Use `shop_product` for paid checkout items, limited prints, one-of-one works,
+  and manual quote products.
+
+If a product has frame choices, add one `shop_option_group` inside the product:
+
+- `key`: `frame`
+- `label`: `Frame`
+
+Then add `shop_option_value` blocks inside that group:
+
+- `none` / `No frame` / `0`
+- `wood` / `Wood frame` / `3000`
+- `black` / `Black frame` / `3000`
 
 ## Live Supabase Overrides
 

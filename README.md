@@ -37,6 +37,7 @@ Copy `.env.example` to `.env.local` and fill in the values:
 STORYBLOK_ACCESS_TOKEN=
 STORYBLOK_PREVIEW_TOKEN=
 STORYBLOK_REVALIDATE_SECRET=
+STORYBLOK_VERSION=
 NEXT_PUBLIC_STORYBLOK_ACCESS_TOKEN=
 NEXT_PUBLIC_SITE_ENV=
 NEXT_PUBLIC_SITE_URL=
@@ -60,6 +61,9 @@ SHOP_ADMIN_SETUP_SECRET=
 
 For the staging deploy, set `NEXT_PUBLIC_SITE_ENV=staging` in Netlify. The
 footer also treats any `NEXT_PUBLIC_SITE_URL` containing `staging` as staging.
+Set `STORYBLOK_VERSION=draft` on the staging deploy when you want staging to
+render unpublished Storyblok content. Leave it empty or set it to `published`
+for production.
 
 Shop setup notes:
 

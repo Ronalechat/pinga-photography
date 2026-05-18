@@ -1,7 +1,6 @@
 import type { SbBlokData } from '@storyblok/react/rsc'
 import type {
   ShopStockAvailability,
-  ShopOptionDisplay,
   ShopOptionGroup,
   ShopProductConfig,
   ShopProductMode,
@@ -24,8 +23,6 @@ interface ShopOptionValueBlok extends SbBlokData {
 interface ShopOptionGroupBlok extends SbBlokData {
   key?: string
   label?: string
-  display?: ShopOptionDisplay
-  required?: boolean
   values?: ShopOptionValueBlok[]
 }
 
@@ -41,7 +38,6 @@ export interface ShopProductBlokShape extends SbBlokData {
   stock_mode?: StockMode
   stock_quantity?: number | string
   show_stock?: boolean
-  low_stock_threshold?: number | string
   shipping_profile?: ShippingProfile
   shipping_note?: string
   weight_grams?: number | string
@@ -53,6 +49,19 @@ export interface ShopProductBlokShape extends SbBlokData {
   pickup_available?: boolean
   option_groups?: ShopOptionGroupBlok[]
   cta_label?: string
+}
+
+interface ShopProductBlokWithAliases extends ShopProductBlokShape {
+  option_group?: ShopOptionGroupBlok[]
+  options?: ShopOptionGroupBlok[]
+  optionGroups?: ShopOptionGroupBlok[]
+}
+
+interface ShopOptionGroupBlokWithAliases extends ShopOptionGroupBlok {
+  value?: ShopOptionValueBlok[]
+  option_values?: ShopOptionValueBlok[]
+  optionValues?: ShopOptionValueBlok[]
+  options?: ShopOptionValueBlok[]
 }
 
 interface SupabaseInventoryRow {
@@ -126,30 +135,40 @@ function toShippingProfile(value: ShippingProfile | undefined): ShippingProfile 
   return undefined
 }
 
-function toOptionDisplay(value: ShopOptionDisplay | undefined): ShopOptionDisplay {
-  return value === 'select' ? 'select' : 'toggle'
+function getBlokList<T>(...values: Array<T[] | undefined>) {
+  return values.find((value) => Array.isArray(value)) ?? []
 }
 
 function mapOptionGroups(groups: ShopOptionGroupBlok[] | undefined): ShopOptionGroup[] {
   return (groups ?? [])
     .filter((group) => Boolean(group.key && group.label))
-    .map((group) => ({
-      key: group.key as string,
-      label: group.label as string,
-      display: toOptionDisplay(group.display),
-      required: group.required,
-      values: (group.values ?? [])
-        .filter((value) => Boolean(value.key && value.label))
-        .map((value) => ({
-          key: value.key as string,
-          label: value.label as string,
-          priceDeltaCents: toNumber(value.price_delta_cents, 0),
-        })),
-    }))
+    .map((group) => {
+      const groupWithAliases = group as ShopOptionGroupBlokWithAliases
+
+      return {
+        key: group.key as string,
+        label: group.label as string,
+        values: getBlokList(
+          group.values,
+          groupWithAliases.value,
+          groupWithAliases.option_values,
+          groupWithAliases.optionValues,
+          groupWithAliases.options
+        )
+          .filter((value) => Boolean(value.key && value.label))
+          .map((value) => ({
+            key: value.key as string,
+            label: value.label as string,
+            priceDeltaCents: toNumber(value.price_delta_cents, 0),
+          })),
+      }
+    })
     .filter((group) => group.values.length > 0)
 }
 
 export function mapShopProductBlok(blok: ShopProductBlokShape): ShopProductConfig {
+  const blokWithAliases = blok as ShopProductBlokWithAliases
+
   return {
     productId: blok.product_id || blok._uid || 'shop-product',
     title: blok.title || 'Untitled product',
@@ -167,9 +186,6 @@ export function mapShopProductBlok(blok: ShopProductBlokShape): ShopProductConfi
     stockMode: toStockMode(blok.stock_mode),
     stockQuantity: blok.stock_quantity === '' ? undefined : toNumber(blok.stock_quantity, 0),
     showStock: blok.show_stock,
-    lowStockThreshold: blok.low_stock_threshold === ''
-      ? undefined
-      : toNumber(blok.low_stock_threshold, 0),
     shippingProfile: toShippingProfile(blok.shipping_profile),
     shippingNote: blok.shipping_note || undefined,
     weightGrams: blok.weight_grams === '' ? undefined : toNumber(blok.weight_grams, 0),
@@ -185,7 +201,14 @@ export function mapShopProductBlok(blok: ShopProductBlokShape): ShopProductConfi
     canCombineShipping: blok.can_combine_shipping,
     requiresManualShippingQuote: blok.requires_manual_shipping_quote,
     pickupAvailable: blok.pickup_available,
-    optionGroups: mapOptionGroups(blok.option_groups),
+    optionGroups: mapOptionGroups(
+      getBlokList(
+        blok.option_groups,
+        blokWithAliases.option_group,
+        blokWithAliases.options,
+        blokWithAliases.optionGroups
+      )
+    ),
     ctaLabel: blok.cta_label || undefined,
   }
 }

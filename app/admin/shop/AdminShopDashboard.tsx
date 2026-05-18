@@ -111,6 +111,10 @@ function getErrorMessage(data: unknown, fallback: string) {
   return response.error || fallback
 }
 
+function isAuthFailure(statusCode: number) {
+  return statusCode === 401 || statusCode === 403
+}
+
 function buildSummaryUrl(history: HistoryState) {
   const params = new URLSearchParams({
     orderStatus: history.orderStatus,
@@ -207,28 +211,37 @@ function PageControls({
   disabled: boolean
   onChange: (offset: number) => void
 }) {
+  const canGoNewer = offset > 0
+  const canGoOlder = hasMore
+
+  if (!canGoNewer && !canGoOlder) return null
+
   return (
     <div className={styles.actions}>
-      <button
-        type="button"
-        className={styles.textAction}
-        disabled={disabled || offset === 0}
-        onClick={() => onChange(Math.max(0, offset - limit))}
-      >
-        <Typography variant="caption" as="span">
-          Newer
-        </Typography>
-      </button>
-      <button
-        type="button"
-        className={styles.textAction}
-        disabled={disabled || !hasMore}
-        onClick={() => onChange(offset + limit)}
-      >
-        <Typography variant="caption" as="span">
-          Older
-        </Typography>
-      </button>
+      {canGoNewer && (
+        <button
+          type="button"
+          className={styles.textAction}
+          disabled={disabled}
+          onClick={() => onChange(Math.max(0, offset - limit))}
+        >
+          <Typography variant="caption" as="span">
+            Newer
+          </Typography>
+        </button>
+      )}
+      {canGoOlder && (
+        <button
+          type="button"
+          className={styles.textAction}
+          disabled={disabled}
+          onClick={() => onChange(offset + limit)}
+        >
+          <Typography variant="caption" as="span">
+            Older
+          </Typography>
+        </button>
+      )}
     </div>
   )
 }
@@ -396,15 +409,23 @@ export default function AdminShopDashboard() {
   }, [summary])
 
   const handleSessionExpiry = useCallback(() => {
+    void fetch('/api/admin/shop/logout', { method: 'POST' }).catch(() => undefined)
     setSummary(null)
+    setActiveUser('')
     setCsrfToken('')
+    setPin('')
+    setConfirmPin('')
+    setSetupSecret('')
+    setMessage('')
+    setMutationStatus('idle')
     setAuthStatus('login')
-    setStatus('unauthorised')
-    setAuthMessage('Your admin session has expired. Enter your code again to continue.')
+    setStatus('idle')
+    setActiveCodeField('pin')
+    setAuthMessage("You've been logged out. Enter your code to continue.")
   }, [])
 
-  const handleLoadSummary = useCallback(async () => {
-    setStatus('loading')
+  const handleLoadSummary = useCallback(async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
+    if (showLoading) setStatus('loading')
     setMessage('')
 
     try {
@@ -412,14 +433,12 @@ export default function AdminShopDashboard() {
       const data = await res.json().catch(() => null) as unknown
 
       if (!res.ok) {
-        if (res.status === 401) {
+        if (isAuthFailure(res.status)) {
           handleSessionExpiry()
           return
         }
 
-        const nextStatus: DashboardStatus = res.status === 401
-          ? 'unauthorised'
-          : data && typeof data === 'object' && (data as DashboardResponse).setupRequired
+        const nextStatus: DashboardStatus = data && typeof data === 'object' && (data as DashboardResponse).setupRequired
             ? 'setup'
             : 'error'
 
@@ -428,6 +447,7 @@ export default function AdminShopDashboard() {
         return
       }
 
+      setAuthMessage('')
       const response = data as ShopAdminSummary
       setSummary(response)
       setStatus('ready')
@@ -454,8 +474,14 @@ export default function AdminShopDashboard() {
         return
       }
 
+      setSummary(null)
+      setActiveUser('')
+      setCsrfToken('')
+      setStatus('idle')
       setAuthStatus('login')
-      if (data && typeof data === 'object' && (data as SessionResponse).setupRequired) {
+      if (res.status === 401) {
+        setAuthMessage("You've been logged out. Enter your code to continue.")
+      } else if (data && typeof data === 'object' && (data as SessionResponse).setupRequired) {
         setAuthMessage('Admin entry is not fully configured yet.')
       }
     } catch {
@@ -485,7 +511,7 @@ export default function AdminShopDashboard() {
       const data = await res.json().catch(() => null) as unknown
 
       if (!res.ok) {
-        if (res.status === 401) {
+        if (isAuthFailure(res.status)) {
           handleSessionExpiry()
           return
         }
@@ -497,7 +523,7 @@ export default function AdminShopDashboard() {
         return
       }
 
-      await handleLoadSummary()
+      await handleLoadSummary({ showLoading: false })
     } catch {
       setStatus('error')
       setMessage('Shop admin update failed.')
@@ -1133,7 +1159,11 @@ export default function AdminShopDashboard() {
                         <button
                           type="button"
                           className={styles.textAction}
-                          disabled={mutationStatus === 'saving'}
+                          disabled={
+                            mutationStatus === 'saving' ||
+                            enquiry.status === 'contacted' ||
+                            enquiry.status === 'closed'
+                          }
                           onClick={() => updateEnquiry(enquiry.id, 'contacted')}
                         >
                           <Typography variant="caption" as="span">
@@ -1143,7 +1173,7 @@ export default function AdminShopDashboard() {
                         <button
                           type="button"
                           className={styles.textAction}
-                          disabled={mutationStatus === 'saving'}
+                          disabled={mutationStatus === 'saving' || enquiry.status === 'closed'}
                           onClick={() => updateEnquiry(enquiry.id, 'closed')}
                         >
                           <Typography variant="caption" as="span">

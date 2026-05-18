@@ -11,17 +11,19 @@
 }
 
 .inner {
-  max-width: 880px;
+  max-width: 960px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(300px, 420px) minmax(300px, 1fr);
-  gap: 44px;
+  grid-template-columns: minmax(320px, 440px) minmax(320px, 420px);
+  gap: clamp(36px, 6vw, 72px);
   align-items: start;
+  justify-content: center;
 }
 
 .media {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
+  margin: 0 auto;
 }
 
 .content,
@@ -34,6 +36,8 @@
 
 .content {
   gap: var(--space-xl);
+  width: 100%;
+  max-width: 420px;
 }
 
 .copy {
@@ -49,13 +53,14 @@
 }
 
 .subtitle {
-  max-width: 38ch;
+  max-width: 34ch;
+  line-height: 1.55;
 }
 
 .description {
   max-width: 44ch;
   color: var(--color-text-muted-high);
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 .options {
@@ -67,16 +72,17 @@
 }
 
 .meta {
-  gap: var(--space-xs);
-  padding-top: var(--space-md);
+  gap: 6px;
+  max-width: 34ch;
+  padding-top: var(--space-sm);
   border-top: 0.5px solid var(--color-border-divider);
-  color: var(--color-text-muted-low);
+  opacity: 0.72;
 }
 
 .purchase {
   display: flex;
   align-items: end;
-  gap: var(--space-lg);
+  gap: var(--space-md);
   flex-wrap: wrap;
 }
 
@@ -127,11 +133,12 @@
 .quantityLabel {
   display: grid;
   gap: var(--space-sm);
+  flex: 0 0 116px;
 }
 
 .quantityInput {
-  width: 84px;
-  min-height: 38px;
+  width: 100%;
+  min-height: 44px;
   box-sizing: border-box;
   appearance: none;
   -webkit-appearance: none;
@@ -142,10 +149,16 @@
   color: var(--color-text-primary);
   font-family: var(--font-serif);
   font-size: var(--font-size-body);
-  padding: 7px 10px;
+  padding: 9px 12px;
   transition:
     background var(--duration-fast) var(--easing-standard),
     border-color var(--duration-fast) var(--easing-standard);
+}
+
+.purchaseButton {
+  min-width: 164px;
+  min-height: 44px;
+  padding: 11px 24px;
 }
 
 .quantityInput:focus {
@@ -175,11 +188,16 @@
   .inner {
     grid-template-columns: 1fr;
     gap: var(--space-xl);
-    max-width: 420px;
+    max-width: 520px;
   }
 
   .media {
-    max-width: 360px;
+    max-width: 420px;
+  }
+
+  .content {
+    max-width: 420px;
+    margin: 0 auto;
   }
 }
 
@@ -193,11 +211,23 @@
   }
 
   .media {
-    max-width: min(100%, 320px);
+    max-width: min(100%, 340px);
   }
 
   .purchase {
     align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(96px, 0.42fr) minmax(160px, 0.58fr);
+    gap: var(--space-sm);
+  }
+
+  .quantityLabel {
+    flex: none;
+  }
+
+  .purchaseButton {
+    width: 100%;
+    min-width: 0;
   }
 
   .actionPanel {
