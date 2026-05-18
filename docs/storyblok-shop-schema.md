@@ -213,15 +213,26 @@ every product:
 | `package_height_mm` | Number | No | Packed parcel height. |
 | `can_combine_shipping` | Boolean | No | Whether multiple units can share packaging. |
 
-### Page setup
+### Shop page setup
 
-In the existing `page` component body field, allow these blocks:
+In the page type that powers `/shop`, add a body-style Blocks field that allows
+these blocks:
 
 - `product_enquiry`
 - `shop_product`
 
 Do not allow `shop_option_group` or `shop_option_value` in the page body. They
 belong inside `shop_product` only.
+
+For the cleanest setup, use these exact nested field API keys:
+
+- `shop_product.option_groups`
+- `shop_option_group.values`
+
+The app also tolerates a few close variants, such as `options_groups`,
+`shop_option_group`, `shop_option_groups`, `shop_options_group`, and
+`shop_option_value`, but the canonical field names above are easier to reason
+about.
 
 On the `/shop` story, add one block per product:
 

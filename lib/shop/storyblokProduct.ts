@@ -53,15 +53,27 @@ export interface ShopProductBlokShape extends SbBlokData {
 
 interface ShopProductBlokWithAliases extends ShopProductBlokShape {
   option_group?: ShopOptionGroupBlok[]
+  option_groups?: ShopOptionGroupBlok[]
+  options_groups?: ShopOptionGroupBlok[]
   options?: ShopOptionGroupBlok[]
   optionGroups?: ShopOptionGroupBlok[]
+  shop_option_group?: ShopOptionGroupBlok[]
+  shop_option_groups?: ShopOptionGroupBlok[]
+  shop_options_group?: ShopOptionGroupBlok[]
+  shop_options_groups?: ShopOptionGroupBlok[]
 }
 
 interface ShopOptionGroupBlokWithAliases extends ShopOptionGroupBlok {
   value?: ShopOptionValueBlok[]
+  values?: ShopOptionValueBlok[]
+  option_value?: ShopOptionValueBlok[]
   option_values?: ShopOptionValueBlok[]
   optionValues?: ShopOptionValueBlok[]
   options?: ShopOptionValueBlok[]
+  shop_option_value?: ShopOptionValueBlok[]
+  shop_option_values?: ShopOptionValueBlok[]
+  shop_options_value?: ShopOptionValueBlok[]
+  shop_options_values?: ShopOptionValueBlok[]
 }
 
 interface SupabaseInventoryRow {
@@ -151,9 +163,14 @@ function mapOptionGroups(groups: ShopOptionGroupBlok[] | undefined): ShopOptionG
         values: getBlokList(
           group.values,
           groupWithAliases.value,
+          groupWithAliases.option_value,
           groupWithAliases.option_values,
           groupWithAliases.optionValues,
-          groupWithAliases.options
+          groupWithAliases.options,
+          groupWithAliases.shop_option_value,
+          groupWithAliases.shop_option_values,
+          groupWithAliases.shop_options_value,
+          groupWithAliases.shop_options_values
         )
           .filter((value) => Boolean(value.key && value.label))
           .map((value) => ({
@@ -205,6 +222,11 @@ export function mapShopProductBlok(blok: ShopProductBlokShape): ShopProductConfi
       getBlokList(
         blok.option_groups,
         blokWithAliases.option_group,
+        blokWithAliases.options_groups,
+        blokWithAliases.shop_option_group,
+        blokWithAliases.shop_option_groups,
+        blokWithAliases.shop_options_group,
+        blokWithAliases.shop_options_groups,
         blokWithAliases.options,
         blokWithAliases.optionGroups
       )
