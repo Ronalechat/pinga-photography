@@ -1156,6 +1156,18 @@ export default function AdminShopDashboard() {
                         </div>
                       </div>
                       <div className={styles.actions}>
+                        {enquiry.status === 'contacted' && (
+                          <button
+                            type="button"
+                            className={styles.textAction}
+                            disabled={mutationStatus === 'saving'}
+                            onClick={() => updateEnquiry(enquiry.id, 'new')}
+                          >
+                            <Typography variant="caption" as="span">
+                              Undo contacted
+                            </Typography>
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={styles.textAction}
