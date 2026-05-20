@@ -223,6 +223,7 @@ export default function ShopProduct({ product }: ShopProductProps) {
                       if (selectedValue) handleSelection(group.key, selectedValue.key)
                     }}
                     variant="primary"
+                    className={styles.optionToggle}
                   />
                 </div>
               ))}
