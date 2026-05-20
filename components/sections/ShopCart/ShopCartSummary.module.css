@@ -27,16 +27,17 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-md);
+  color: var(--color-text-muted-mid);
 }
 
 .cartIcon {
   position: relative;
-  width: 18px;
-  height: 15px;
-  border: 1px solid currentColor;
+  width: 15px;
+  height: 10px;
+  border: 1.5px solid currentColor;
   border-top: 0;
-  color: var(--color-text-primary);
-  opacity: 0.82;
+  color: currentColor;
+  opacity: 0.9;
 }
 
 .cartIcon::before {
@@ -44,21 +45,14 @@
   position: absolute;
   left: 2px;
   right: 2px;
-  top: -6px;
-  height: 8px;
-  border: 1px solid currentColor;
+  top: -4px;
+  height: 5px;
+  border: 1.5px solid currentColor;
   border-bottom: 0;
 }
 
 .cartIcon::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: -5px;
-  height: 2px;
-  border-left: 2px solid currentColor;
-  border-right: 2px solid currentColor;
+  content: none;
 }
 
 .toggle:focus-visible,

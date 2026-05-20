@@ -223,7 +223,8 @@ export default function ShopProduct({ product }: ShopProductProps) {
                       if (selectedValue) handleSelection(group.key, selectedValue.key)
                     }}
                     variant="primary"
-                    className={styles.optionToggle}
+                    layout="stacked"
+                    size="compact"
                   />
                 </div>
               ))}
@@ -264,9 +265,9 @@ export default function ShopProduct({ product }: ShopProductProps) {
 
               <PingaButton
                 variant="sweep"
+                size="compact"
                 type="button"
                 onClick={handleAddToCart}
-                className={styles.purchaseButton}
               >
                 Add to cart
               </PingaButton>
