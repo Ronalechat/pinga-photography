@@ -20,6 +20,7 @@ const config: StorybookConfig = {
     webpackConfig.resolve = webpackConfig.resolve ?? {}
     webpackConfig.resolve.alias = {
       ...(webpackConfig.resolve.alias ?? {}),
+      '@': path.resolve(__dirname, '..'),
       '@tokens': path.resolve(__dirname, '../tokens'),
       'next/navigation': path.resolve(__dirname, './mocks/next-navigation'),
     }

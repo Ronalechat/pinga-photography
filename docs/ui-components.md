@@ -9,8 +9,8 @@ in a PR description before creating a new pattern.
 
 ## PingaButton
 
-**File:** `/components/ui/PingaButton.tsx`
-**CSS:** `/components/ui/PingaButton.module.css`
+**File:** `/components/ui/Button/PingaButton.tsx`
+**CSS:** `/components/ui/Button/PingaButton.module.css`
 **Stories:** `Pinga / UI / PingaButton` in Storybook
 
 Always renders as a `<button>` element. For navigation links use Next.js
@@ -23,6 +23,7 @@ their own established hover behaviour and are not changed.
 |---|---|---|---|
 | `variant` | `'ghost' \| 'sweep'` | — | Visual variant. Required. |
 | `children` | `React.ReactNode` | — | Button label. Required. |
+| `size` | `'default' \| 'compact'` | `'default'` | Sizing preset. Use `compact` for dense product controls. |
 | `type` | `'button' \| 'submit' \| 'reset'` | `'button'` | HTML button type. |
 | `disabled` | `boolean` | `false` | Disables the button. Applies 35% opacity and suppresses all hover animations. |
 | `onClick` | `React.MouseEventHandler` | — | Click handler. |
@@ -61,6 +62,18 @@ Bordered box. White fill sweeps from left on hover; text inverts to near-black.
 </PingaButton>
 ```
 
+### Size: compact
+
+Use `size="compact"` when a primary action sits beside a utility input, such as
+`ShopProduct` quantity + add-to-cart. The compact size keeps both controls on
+the same visual height without overriding the button internals from section CSS.
+
+```tsx
+<PingaButton variant="sweep" size="compact" type="button">
+  Add to cart
+</PingaButton>
+```
+
 ### The triangle note
 
 The decorative CSS triangle beside the "Send enquiry" label in `EnquiryForm`
@@ -74,13 +87,14 @@ support to `PingaButton`.
 |---|---|---|
 | `EnquiryForm.tsx` submit | `sweep` | `submit` |
 | `ProductEnquiry.tsx` submit | `sweep` | `submit` |
+| `ShopProduct.tsx` add-to-cart | `sweep` + `compact` | `button` |
 
 ---
 
 ## PingaToggle
 
-**File:** `/components/ui/PingaToggle.tsx`
-**CSS:** `/components/ui/PingaToggle.module.css`
+**File:** `/components/ui/ToggleButton/PingaToggle.tsx`
+**CSS:** `/components/ui/ToggleButton/PingaToggle.module.css`
 **Stories:** `Pinga / UI / PingaToggle` in Storybook
 
 Inline group of toggle buttons. One visual variant: state-driven sweep fill
@@ -95,6 +109,10 @@ controls behaviour — the visual appearance is identical for both modes.
 | `selected` | `string \| string[]` | — | Currently active option(s). Pass `string` for single select, `string[]` for multi. Required. |
 | `onChange` | `(value: string \| string[]) => void` | — | Called with the new selection. Value type matches `selected` type. Required. |
 | `multiSelect` | `boolean` | `false` | When `false`: single select. When `true`: multi select. |
+| `variant` | `'default' \| 'primary'` | `'default'` | Contrast preset. Use `primary` when the option set is a core interaction. |
+| `layout` | `'wrap' \| 'stacked'` | `'wrap'` | `wrap` creates inline chips. `stacked` creates equal-width rows for longer product options. |
+| `size` | `'default' \| 'compact'` | `'default'` | `compact` creates denser rows for product option selectors. |
+| `className` | `string` | — | Additional class on the root group. Prefer layout/size props over nested overrides. |
 
 ### Behaviour
 
@@ -114,6 +132,10 @@ Clicking an active option removes it: `onChange(current.filter(s => s !== option
 - Sweep animation is triggered by `selected` prop change, not by pointer events.
 - Resting text: `rgba(179, 179, 186, 0.5)`. Selected text: `#16161D`.
 - Resting border: `rgba(255, 255, 255, 0.18)`. Selected border: `#F2F2FC`.
+- Use `layout="stacked"` for product option groups where labels differ in
+  length. This keeps option rows stable instead of letting label length set
+  each button width.
+- Use `size="compact"` for product option rows.
 
 ### Single select example (KineticGrid)
 
@@ -140,6 +162,19 @@ const [occasions, setOccasions] = useState<string[]>([])
 />
 ```
 
+### Product option example (ShopProduct)
+
+```tsx
+<PingaToggle
+  options={frameOptions}
+  selected={selectedFrame}
+  onChange={handleFrameChange}
+  variant="primary"
+  layout="stacked"
+  size="compact"
+/>
+```
+
 ### The toggle variant note
 
 There is only one visual variant. `multiSelect` changes **behaviour**, not
@@ -153,6 +188,7 @@ signal regardless of whether they're in a single-select or multi-select context.
 |---|---|---|
 | `KineticGrid.tsx` | `multiSelect: false` | Category filter bar |
 | `EnquiryForm.tsx` | `multiSelect: true` | Occasion picker |
+| `ShopProduct.tsx` | `multiSelect: false`, `layout="stacked"`, `size="compact"` | Product option selector |
 
 ---
 
@@ -170,6 +206,17 @@ signal regardless of whether they're in a single-select or multi-select context.
 | Resting text (button) | `rgba(242, 242, 252, 0.6)` |
 | Resting text (toggle) | `rgba(179, 179, 186, 0.5)` |
 | Reduced motion | All transitions suppressed via `prefers-reduced-motion: reduce` |
+
+## Interaction alignment rules
+
+- Primary actions sit on the right side of their interaction row.
+- Submit rows are right-aligned.
+- When a row pairs a utility input with a primary action, place the utility
+  input first and the primary action on the right.
+- Keep dense product controls compact. Do not stretch a primary button across
+  the full mobile column unless the surrounding form pattern already does that.
+- Icons next to text inherit the text colour unless they are intentionally the
+  primary affordance.
 
 ---
 
