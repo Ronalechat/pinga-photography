@@ -28,7 +28,7 @@
   --slide-overlay-gradient: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
   --progress-bar-height: 2px;
   --dot-size: 5px;
-  --hint-bottom: 40px;
+  --hint-bottom: 56px;
 }
 
 /* ── Slide — stacked full-bleed layers, crossfaded by scroll progress ────── */
@@ -129,6 +129,10 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+.hintText {
+  font-size: var(--font-size-caption);
+}
+
 /* ── Title / subtitle — centered on slide ──────────────────────────────────── */
 /* Font styles live in Typography.module.css (displaySlide / heroSubtitle variants) */
 .title {
@@ -156,6 +160,10 @@
 
 /* ── Tablet: 768px+ ──────────────────────────────────*/
 @media (min-width: 768px) {
+  .stage {
+    --hint-bottom: 64px;
+  }
+
   .label {
     bottom: 44px;
     left: 36px;
@@ -173,6 +181,10 @@
 
 /* ── Desktop: 1024px+ ────────────────────────────────*/
 @media (min-width: 1024px) {
+  .stage {
+    --hint-bottom: 40px;
+  }
+
   .label {
     bottom: 48px;
     left: 52px;
@@ -184,4 +196,8 @@
   }
 
   .dots { right: 28px; }
+
+  .hintText {
+    font-size: var(--font-size-eyebrow);
+  }
 }

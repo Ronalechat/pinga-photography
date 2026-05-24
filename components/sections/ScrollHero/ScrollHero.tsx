@@ -462,7 +462,9 @@ export default function ScrollHero({
         {/* ── Scroll hint ── */}
         <div ref={hintRef} className={styles.hint} style={{ transition: 'opacity 0.4s ease' }}>
           <div className={styles.hintLine} />
-          <Typography variant="meta" color="rgba(255,255,255,0.4)">Scroll</Typography>
+          <Typography variant="meta" className={styles.hintText} color="rgba(255,255,255,0.4)">
+            Scroll
+          </Typography>
         </div>
 
       </div>
