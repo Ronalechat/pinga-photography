@@ -1,0 +1,230 @@
+/*
+ * ShopProduct.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Cart-enabled product section. Shares the same compact left-media/right-form
+ * language as ProductEnquiry without becoming a card-heavy shop grid.
+ */
+
+.root {
+  padding: 48px 0;
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(320px, 440px) minmax(320px, 420px);
+  gap: clamp(36px, 6vw, 72px);
+  align-items: start;
+  justify-content: center;
+}
+
+.media {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.content,
+.copy,
+.options,
+.optionGroup,
+.meta {
+  display: grid;
+}
+
+.content {
+  gap: var(--space-xl);
+  width: 100%;
+  max-width: 420px;
+}
+
+.copy {
+  gap: var(--space-md);
+}
+
+.title {
+  line-height: 1.05;
+}
+
+.price {
+  margin-top: calc(var(--space-sm) * -1);
+}
+
+.subtitle {
+  max-width: 34ch;
+  line-height: 1.55;
+}
+
+.description {
+  max-width: 44ch;
+  color: var(--color-text-muted-high);
+  line-height: 1.7;
+}
+
+.options {
+  gap: var(--space-lg);
+}
+
+.optionGroup {
+  gap: var(--space-sm);
+}
+
+.meta {
+  gap: 6px;
+  max-width: 34ch;
+  padding-top: var(--space-sm);
+  border-top: 0.5px solid var(--color-border-divider);
+  opacity: 0.72;
+}
+
+.purchase {
+  display: grid;
+  grid-template-columns: 96px 154px;
+  align-items: end;
+  justify-content: end;
+  gap: 10px;
+}
+
+.actionPanel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.actionCopy {
+  display: grid;
+  gap: var(--space-xs);
+  max-width: 44ch;
+}
+
+.actionLink {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--color-text-primary);
+  color: var(--color-text-primary);
+  padding: 10px 18px;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard);
+}
+
+.actionLink:hover {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+}
+
+.actionLink span {
+  color: inherit;
+}
+
+.actionLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.quantityLabel {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.quantityInput {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--color-border-input);
+  border-radius: 0;
+  outline: none;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: var(--font-size-body);
+  padding: 8px 10px;
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard);
+}
+
+.quantityInput:focus {
+  background: var(--color-bg-input-focus);
+  border-color: var(--color-border-hover);
+}
+
+.quantityInput:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.quantityInput:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.added {
+  color: var(--color-text-muted-high);
+}
+
+@media (max-width: 1023px) {
+  .root {
+    padding: 40px 0;
+  }
+
+  .inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    max-width: 520px;
+  }
+
+  .media {
+    max-width: 420px;
+  }
+
+  .content {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .root {
+    padding: 32px 0;
+  }
+
+  .inner {
+    max-width: 100%;
+  }
+
+  .media {
+    max-width: min(100%, 340px);
+  }
+
+  .purchase {
+    grid-template-columns: 96px 154px;
+  }
+
+  .actionPanel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .actionLink {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quantityInput,
+  .actionLink {
+    transition: none;
+  }
+}

@@ -2,9 +2,8 @@
 node_modules/
 
 # ── Environment variables (NEVER commit these) ────────────────────────────────
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example
 
 # ── Next.js build output ─────────────────────────────────────────────────────
 .next/
@@ -13,6 +12,9 @@ dist/
 
 # ── Storybook build output ────────────────────────────────────────────────────
 storybook-static/
+
+# ── Deployment provider local state ──────────────────────────────────────────
+.netlify/
 
 # ── TypeScript build cache ────────────────────────────────────────────────────
 tsconfig.tsbuildinfo

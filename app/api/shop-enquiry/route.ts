@@ -1,6 +1,7 @@
 import { createSign } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { persistShopEnquiry } from '@/lib/shop/enquiryPersistence'
 
 export const runtime = 'nodejs'
 
@@ -103,6 +104,7 @@ async function appendToSheet(values: string[]) {
 
 function validateBody(body: Record<string, unknown>): string | null {
   const productName = sanitize(body.productName)
+  const productId = sanitize(body.productId)
   const productPrice = sanitize(body.productPrice)
   const name = sanitize(body.name)
   const email = sanitize(body.email)
@@ -111,6 +113,7 @@ function validateBody(body: Record<string, unknown>): string | null {
   const quantity = Number(body.quantity)
 
   if (!productName) return 'Product is required'
+  if (productId.length > 160) return 'Product ID must be 160 characters or fewer'
   if (productName.length > 160) return 'Product name must be 160 characters or fewer'
   if (productPrice.length > 80) return 'Product price must be 80 characters or fewer'
   if (!name) return 'Name is required'
@@ -142,6 +145,7 @@ export async function POST(req: NextRequest) {
   }
 
   const productName = sanitize(body.productName)
+  const productId = sanitize(body.productId)
   const productPrice = sanitize(body.productPrice)
   const name = sanitize(body.name)
   const email = sanitize(body.email)
@@ -183,6 +187,27 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[shop-enquiry] email send failed', err)
     return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
+  }
+
+  try {
+    await persistShopEnquiry({
+      productId,
+      productTitle: productName,
+      customerName: name,
+      customerEmail: email,
+      customerPhone: phone,
+      quantity: Number(quantity),
+      selectedOptions: [{
+        groupKey: 'size',
+        groupLabel: 'Size',
+        valueKey: size.toLowerCase().replace(/\s+/g, '-'),
+        valueLabel: size,
+        priceDeltaCents: 0,
+      }],
+      message: productPrice ? `Price shown: ${productPrice}` : undefined,
+    })
+  } catch (err) {
+    console.error('[shop-enquiry] supabase persist failed', err)
   }
 
   try {

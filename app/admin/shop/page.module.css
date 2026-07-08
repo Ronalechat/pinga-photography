@@ -1,0 +1,4 @@
+.root {
+  display: grid;
+  padding-bottom: clamp(72px, 10vw, 120px);
+}

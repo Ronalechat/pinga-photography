@@ -1,0 +1,282 @@
+/*
+ * ShopCartSummary.module.css
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Route-scoped cart surface for /shop. Hidden elsewhere by composition, not by
+ * route checks inside the component.
+ */
+
+.root {
+  width: min(100%, 420px);
+  margin: var(--space-xl) 0 var(--space-xxl) auto;
+  border-top: 0.5px solid var(--color-border-divider);
+  border-bottom: 0.5px solid var(--color-border-divider);
+}
+
+.toggle {
+  composes: reset from '../../ui/_buttonReset.module.css';
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+}
+
+.toggleLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  color: var(--color-text-muted-mid);
+}
+
+.cartIcon {
+  position: relative;
+  width: 15px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-top: 0;
+  color: currentColor;
+  opacity: 0.9;
+}
+
+.cartIcon::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: -4px;
+  height: 5px;
+  border: 1.5px solid currentColor;
+  border-bottom: 0;
+}
+
+.cartIcon::after {
+  content: none;
+}
+
+.toggle:focus-visible,
+.remove:focus-visible,
+.quantityInput:focus-visible,
+.deliveryInput:focus-visible,
+.shippingRadio:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.count {
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-input);
+  color: var(--color-text-primary);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-lg);
+  justify-items: stretch;
+  padding: var(--space-lg) 0 var(--space-xl);
+}
+
+.lines {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.line:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lineCopy {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.lineTitle {
+  line-height: 1.45;
+}
+
+.lineControls {
+  display: flex;
+  align-items: start;
+  gap: var(--space-md);
+}
+
+.quantityLabel {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.quantityInput {
+  width: 64px;
+  min-height: 34px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--color-border-input);
+  border-radius: 0;
+  outline: none;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: var(--font-size-body);
+  padding: 7px 10px;
+}
+
+.remove {
+  composes: reset from '../../ui/_buttonReset.module.css';
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-text-muted-mid);
+}
+
+.total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.delivery {
+  display: grid;
+  gap: var(--space-md);
+  padding-top: var(--space-lg);
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.deliveryHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.deliveryFields {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(100px, 0.72fr);
+  gap: var(--space-md);
+}
+
+.deliveryField {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.deliveryInput {
+  width: 100%;
+  min-height: 34px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--color-border-input);
+  border-radius: 0;
+  outline: none;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: var(--font-size-body);
+  padding: 7px 10px;
+}
+
+.shippingOptions {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.shippingOption {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-md);
+  align-items: start;
+  padding-top: var(--space-sm);
+  border-top: 0.5px solid var(--color-border-divider);
+  cursor: pointer;
+}
+
+.shippingRadio {
+  width: 16px;
+  height: 16px;
+  margin: 4px 0 0;
+  accent-color: var(--color-text-primary);
+}
+
+.shippingCopy {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.checkoutTotals {
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-lg);
+  border-top: 0.5px solid var(--color-border-divider);
+}
+
+.checkoutRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.error {
+  color: var(--color-error);
+}
+
+.notice {
+  color: var(--color-text-muted-high);
+}
+
+@media (max-width: 767px) {
+  .root {
+    margin: var(--space-xl) 0 var(--space-xl) auto;
+  }
+
+  .quantityInput,
+  .deliveryInput {
+    font-size: 16px;
+  }
+
+  .line {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .lineControls {
+    justify-content: space-between;
+  }
+
+  .deliveryHeader,
+  .deliveryFields {
+    grid-template-columns: 1fr;
+  }
+
+  .deliveryHeader {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .shippingOption {
+    grid-template-columns: auto 1fr;
+  }
+
+  .shippingOption > :last-child {
+    grid-column: 2;
+  }
+}

@@ -5,16 +5,21 @@ import type { SbBlokData } from '@storyblok/react/rsc'
 import { getStoryblokApi, getVersion } from '@/utils/storyblok'
 import Container from '@/components/layout/Container/Container'
 import PageHeader from '@/components/sections/PageHeader/PageHeader'
+import { ShopCartProvider } from '@/components/sections/ShopCart/ShopCartProvider'
+import ShopCartSummary from '@/components/sections/ShopCart/ShopCartSummary'
 import ProductEnquiryBlok, {
   type ProductEnquiryBlokShape,
 } from '@/components/bloks/ProductEnquiryBlok'
+import ShopProductBlok, {
+  type ShopProductBlokShape,
+} from '@/components/bloks/ShopProductBlok'
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: 'Shop — P!nga | T-Shirt Enquiries',
+  title: 'Shop — P!nga | Prints and Product Enquiries',
   description:
-    'Register interest in limited P!nga T-shirt print runs by Sydney artist Paul Pinga Matereke.',
+    'Shop limited prints and register interest in product runs by Sydney artist Paul Pinga Matereke.',
 }
 
 export default async function ShopPage() {
@@ -29,21 +34,38 @@ export default async function ShopPage() {
     notFound()
   }
 
-  const productBloks = ((data.story.content.body ?? []) as SbBlokData[])
-    .filter((b) => b.component === 'product_enquiry')
+  const body = (data.story.content.body ?? []) as SbBlokData[]
 
   return (
-    <main>
-      <Container>
-        <PageHeader title="Shop" />
-        {productBloks.map((blok) => (
-          <ProductEnquiryBlok
-            key={blok._uid}
-            blok={blok as ProductEnquiryBlokShape}
-          />
-        ))}
-      </Container>
-      <StoryblokLiveEditing story={data.story} />
-    </main>
+    <ShopCartProvider>
+      <main>
+        <Container>
+          <PageHeader title="Shop" />
+          <ShopCartSummary />
+          {body.map((blok) => {
+            if (blok.component === 'shop_product') {
+              return (
+                <ShopProductBlok
+                  key={blok._uid}
+                  blok={blok as ShopProductBlokShape}
+                />
+              )
+            }
+
+            if (blok.component === 'product_enquiry') {
+              return (
+                <ProductEnquiryBlok
+                  key={blok._uid}
+                  blok={blok as ProductEnquiryBlokShape}
+                />
+              )
+            }
+
+            return null
+          })}
+        </Container>
+        <StoryblokLiveEditing story={data.story} />
+      </main>
+    </ShopCartProvider>
   )
 }

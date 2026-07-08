@@ -42,11 +42,21 @@ import { analytics } from '@/lib/analytics'
 import styles from './SiteHeader.module.css'
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
+type NavLink = {
+  label: string
+  href: string
+  scrollId?: string
+}
+
 const NAV_LINKS = [
   { label: 'Gallery', href: '/gallery' },
   { label: 'Shop', href: '/shop' },
   { label: 'Enquire', href: '/enquiry', scrollId: 'enquire' },
-] as const
+] satisfies NavLink[]
+
+const ADMIN_NAV_LINKS = [
+  { label: 'Shop', href: '/shop' },
+] satisfies NavLink[]
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -60,6 +70,7 @@ export interface SiteHeaderProps {
 export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
   const pathname = usePathname()
   const headerRef = useRef<HTMLElement>(null)
+  const navLinks = pathname.startsWith('/admin/shop') ? ADMIN_NAV_LINKS : NAV_LINKS
 
   useEffect(() => {
     // Snapshot env(safe-area-inset-top) once on mount into a static CSS var.
@@ -137,12 +148,13 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
    * Nav click handler for all links.
    * Tracks the click, then handles enquire scroll intercept on homepage.
    */
-  const handleNavClick = useCallback((item: typeof NAV_LINKS[number]) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const scrolled = 'scrollId' in item && pathname === '/'
+  const handleNavClick = useCallback((item: NavLink) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const scrollId = item.scrollId
+    const scrolled = Boolean(scrollId) && pathname === '/'
     analytics.track('Header Nav Clicked', { label: item.label, destination: item.href, scrolled })
-    if (scrolled) {
+    if (scrolled && scrollId) {
       e.preventDefault()
-      document.getElementById(item.scrollId)?.scrollIntoView({ behavior: 'smooth' })
+      document.getElementById(scrollId)?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [pathname])
 
@@ -166,7 +178,7 @@ export default function SiteHeader({ name = 'P!nga' }: SiteHeaderProps) {
 
         {/* Nav links */}
         <nav className={styles.nav} aria-label="Main navigation">
-          {NAV_LINKS.map((item, i) => (
+          {navLinks.map((item, i) => (
             <span key={item.href} style={{ display: 'contents' }}>
               {/* Separator dot between links */}
               {i > 0 && <span className={styles.sep} aria-hidden="true" />}

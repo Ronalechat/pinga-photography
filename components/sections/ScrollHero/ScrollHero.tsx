@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { COLOR } from '@tokens'
 import Typography from '@/components/ui/Typography/Typography'
 import { analytics } from '@/lib/analytics'
+import utilStyles from '@/styles/utility.module.css'
 import styles from './ScrollHero.module.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -16,6 +17,10 @@ export interface SlideConfig {
   subtitle: string
   /** Real image URL for the slide background */
   src?: string
+  /** Responsive srcset — lets the browser pick the width matching viewport × DPR */
+  srcSet?: string
+  /** sizes attribute paired with srcSet */
+  sizes?: string
   /** Alt text for the slide (used for aria-label) */
   alt?: string
   /** CSS fallback when src is not provided — colour or gradient */
@@ -124,8 +129,14 @@ export default function ScrollHero({
   )
   const resolvedTransition = transitionZone ?? clamp(0.5 / count + 0.15, 0.15, 0.4)
 
+  // Slides 1+ mount their <img> only after the first slide has decoded, so the
+  // full-priority bandwidth goes to the image the visitor actually sees first.
+  // No first image to wait for → nothing to defer.
+  const [restReady, setRestReady] = useState(() => !slides[0]?.src)
+
   const outerRef    = useRef<HTMLDivElement>(null)
   const stageRef    = useRef<HTMLDivElement>(null)
+  const firstImgRef = useRef<HTMLImageElement | null>(null)
   const slideRefs   = useRef<(HTMLDivElement | null)[]>([])
   const dotRefs     = useRef<(HTMLDivElement | null)[]>([])
   const barRef      = useRef<HTMLDivElement>(null)
@@ -137,6 +148,10 @@ export default function ScrollHero({
   // Snap-to-slide state — updated each frame, read after scroll idle timer fires.
   const snapStateRef = useRef<{ cur: number; t: number; inT: boolean } | null>(null)
   const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Last observed scroll direction (1 = down, -1 = up) — snapping is
+  // direction-aware so it never yanks the page against the user's gesture.
+  const scrollDirRef = useRef(1)
+  const lastScrollYRef = useRef(0)
   // willChange promotion — tracks which pair of slides is currently composited
   // so we only set/clear willChange at transition boundaries, not every frame.
   const wcPromotedRef = useRef<{ cur: number; nxt: number } | null>(null)
@@ -193,14 +208,18 @@ export default function ScrollHero({
       }
     }
 
-    // Slide opacities + pointer events (only the visible slide receives clicks)
+    // Slide opacities + pointer events. Only the dominant slide (the one more
+    // than half visible) receives clicks — mid-crossfade both slides used to be
+    // clickable and the DOM-later one silently won, sending clicks to the
+    // wrong category.
+    const dominant = inT && t > 0.5 ? nxt : cur
     slideRefs.current.forEach((slide, i) => {
       if (!slide) return
       let op = 0
       if (i === cur)             op = inT ? 1 - t : 1
       else if (i === nxt && inT) op = t
       slide.style.opacity       = String(op)
-      slide.style.pointerEvents = op > 0 ? 'auto' : 'none'
+      slide.style.pointerEvents = i === dominant ? 'auto' : 'none'
     })
 
     // Nav dots — active dot is larger and brighter
@@ -223,9 +242,13 @@ export default function ScrollHero({
   }, [count, resolvedTransition])
 
   // ── First-slide reveal ────────────────────────────────────────────────────
-  // Waits for the first slide's background image to load before revealing it.
+  // Waits for the first slide's <img> to load and decode before revealing it.
   // Without this, the loading screen disappears but the hero image is still
   // downloading — the user sees a dark stage, then a sudden snap-in.
+  // Watching the rendered <img> (not a detached Image()) means the wait matches
+  // whichever srcset candidate the browser actually chose, and the reveal also
+  // unlocks the deferred slides 1+ so they download after — never alongside —
+  // the image the visitor is looking at.
   // Falls back to revealing after 3s so slow connections don't stall forever.
   useEffect(() => {
     const el  = slideRefs.current[0]
@@ -243,21 +266,35 @@ export default function ScrollHero({
       window.dispatchEvent(new CustomEvent('preloader:ready'))
       el.style.transition = 'opacity 0.4s ease'
       el.style.opacity = '1'
+      setRestReady(true)
       setTimeout(() => { if (!cancelled) el.style.transition = '' }, 450)
     }
+
     const fallback = setTimeout(reveal, 3000)
-    const img = new Image()
-    img.src = src
-    img.decode()
-      .then(() => new Promise<void>(resolve => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      }))
-      .then(() => { clearTimeout(fallback); reveal() })
-      .catch(() => { clearTimeout(fallback); reveal() })
+    const settle = () => {
+      const img = firstImgRef.current
+      const decoded = img ? img.decode() : Promise.resolve()
+      decoded
+        .catch(() => {}) // decode() can reject on already-painted images — reveal anyway
+        .then(() => new Promise<void>(resolve => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        }))
+        .then(() => { clearTimeout(fallback); reveal() })
+    }
+
+    const img = firstImgRef.current
+    if (!img || img.complete) {
+      settle()
+    } else {
+      img.addEventListener('load',  settle, { once: true })
+      img.addEventListener('error', settle, { once: true })
+    }
 
     return () => {
       cancelled = true
       clearTimeout(fallback)
+      img?.removeEventListener('load',  settle)
+      img?.removeEventListener('error', settle)
     }
   }, [slides])
 
@@ -317,25 +354,41 @@ export default function ScrollHero({
       cancelAnimationFrame(rafId)
     }
 
-    // After scrolling stops and we're mid-crossfade, snap to the nearer slide.
-    // Fires only when inT is true — stable "slide fully shown" positions do nothing.
-    const snapToNearest = () => {
+    // After scrolling settles mid-crossfade, resolve to a slide — but always in
+    // the direction the user was scrolling. Snapping to the *nearest* slide used
+    // to yank the page backwards against the gesture (the "bounce"): pause less
+    // than halfway through a transition and it pulled you back to the slide you
+    // were leaving. Now a downward scroll commits forward once you're 20% in
+    // (and vice versa scrolling up), so the page only ever continues the motion
+    // the user started. Fires only when inT is true — stable "slide fully
+    // shown" positions do nothing.
+    const snapToSlide = () => {
       const s = snapStateRef.current
       const cache = layoutCache.current
       if (!s || !cache || !s.inT) return
-      const targetSlide = s.t > 0.5 ? Math.min(s.cur + 1, count - 1) : s.cur
+      const forward = Math.min(s.cur + 1, count - 1)
+      const targetSlide = scrollDirRef.current > 0
+        ? (s.t > 0.2 ? forward : s.cur)
+        : (s.t < 0.8 ? s.cur : forward)
       const targetNorm  = targetSlide / (count - 1 + resolvedTransition * 2)
       const targetY     = cache.outerTop + targetNorm * cache.scrollable
       window.scrollTo({ top: targetY, behavior: 'smooth' })
     }
 
-    // Scroll events spin up the loop; idle timeout shuts it down and snaps
+    // Scroll events spin up the loop; idle timeout shuts it down and snaps.
+    // The 400ms snap delay outlasts trackpad momentum lulls — the old 200ms
+    // timer fired mid-gesture and fought the user's scroll.
     const onScroll = () => {
+      const y = window.scrollY
+      if (y !== lastScrollYRef.current) {
+        scrollDirRef.current = y > lastScrollYRef.current ? 1 : -1
+        lastScrollYRef.current = y
+      }
       start()
       if (idleTimer) clearTimeout(idleTimer)
       idleTimer = setTimeout(stop, 150)
       if (snapTimerRef.current) clearTimeout(snapTimerRef.current)
-      snapTimerRef.current = setTimeout(snapToNearest, 200)
+      snapTimerRef.current = setTimeout(snapToSlide, 400)
     }
 
     // IO gates visibility — don't burn frames when off-screen
@@ -416,12 +469,27 @@ export default function ScrollHero({
             style={{
               opacity: 0,
               cursor:  slide.href ? 'pointer' : undefined,
-              ...(slide.src
-                ? { backgroundImage: `url('${slide.src}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                : { background: slide.background ?? COLOR.bgPrimary }
-              ),
+              ...(slide.src ? {} : { background: slide.background ?? COLOR.bgPrimary }),
             }}
           >
+            {/* Real <img> (not CSS background) so the preload scanner sees it and
+                srcset serves each device its native resolution. Slides 1+ mount
+                only after the first slide has decoded (restReady). */}
+            {slide.src && (i === 0 || restReady) && (
+              <img
+                ref={i === 0 ? firstImgRef : undefined}
+                src={slide.src}
+                srcSet={slide.srcSet}
+                sizes={slide.srcSet ? slide.sizes : undefined}
+                alt=""
+                aria-hidden="true"
+                className={utilStyles.imgCover}
+                fetchPriority={i === 0 ? 'high' : undefined}
+                decoding="async"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+            )}
             <div className={styles.slideOverlay} />
             <Typography variant="displaySlide" as="span" className={styles.title}>{slide.label}</Typography>
             <Typography variant="eyebrow" as="span" className={styles.subtitle} color="rgba(255,255,255,0.45)">{slide.subtitle}</Typography>
@@ -462,7 +530,9 @@ export default function ScrollHero({
         {/* ── Scroll hint ── */}
         <div ref={hintRef} className={styles.hint} style={{ transition: 'opacity 0.4s ease' }}>
           <div className={styles.hintLine} />
-          <Typography variant="meta" color="rgba(255,255,255,0.4)">Scroll</Typography>
+          <Typography variant="meta" className={styles.hintText} color="rgba(255,255,255,0.4)">
+            Scroll
+          </Typography>
         </div>
 
       </div>

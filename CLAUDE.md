@@ -83,7 +83,7 @@ Scroll-driven and reveal animations bypass React state intentionally — they us
 
 ## Component Notes
 
-- **ScrollHero**: Layout measurements (outer element top offset, scrollable height) are cached in a ref and invalidated by ResizeObserver — do not read `getBoundingClientRect` inside the rAF loop. The outer div sets scroll height (`scrollMultiplier × 100vh`); the inner stage is `position: sticky`. Scroll listeners are passive.
+- **ScrollHero**: Layout measurements (outer element top offset, scrollable height) are cached in a ref and invalidated by ResizeObserver — do not read `getBoundingClientRect` inside the rAF loop. The outer div sets scroll height (`scrollMultiplier × 100vh`); the inner stage is `position: sticky`. Scroll listeners are passive. Slides render real `<img>` elements (not CSS backgrounds) so srcset and the preload scanner work. Mid-crossfade snapping is direction-aware — it only ever resolves in the direction the user was scrolling (400ms after scroll settles) and must never yank backwards against the gesture. Only the dominant slide (>50% visible) receives pointer events.
 - **KineticGrid**: Cards use `data-reveal="pending"` and animate via `opacity + transform` (not clip-path). Reveal fires only after the card's `<img>` has loaded (`img.complete`). Hover state for `.cardMeta` is in `KineticGrid.module.css` using `!important` — required to override the inline resting state. The lightbox renders via `createPortal` to `document.body` so it sits above the header's stacking context.
 - **Lightbox**: Lives at `components/ui/Lightbox/`. Reusable outside of KineticGrid. Receives `list`, `index`, `colors`, `onClose`, `onNavigate`, `onJump` props.
 
@@ -148,6 +148,24 @@ Full documentation: `/docs/ui-components.md`
 | `/`        | Landing page                                                  |
 | `/gallery` | Gallery page — all categories, KineticGrid                    |
 | `/enquiry` | Enquiry form page — EnquiryForm with all fields pre-revealed  |
+
+## Storyblok Images
+
+**Never render a raw `asset.filename` — always pass it through `utils/sbImage.ts`.**
+Raw Storyblok uploads are multi-MB originals (up to 20MB+). `sbImage()` / `sbSrcSet()`
+append Storyblok Image Service transforms (resize + auto WebP/AVIF, ~99% smaller).
+Width ladders and quality presets (`FULL_BLEED_*`, `GRID_*`, `LIGHTBOX_*`, `PRODUCT_*`)
+live in the same file — reuse them rather than inventing new widths.
+
+- The first ScrollHero slide is preloaded via `ReactDOM.preload` in `ScrollHeroBlok`.
+  Its `imageSrcSet`/`imageSizes` must stay byte-identical to the `<img>` srcset in
+  ScrollHero, or the browser downloads the image twice.
+- ScrollHero slides 1+ mount their `<img>` only after slide 0 has decoded (`restReady`).
+- Lightbox shows the cached grid-sized image instantly, then swaps in `srcHigh`
+  (2560px) after it fully decodes off-screen.
+- SitePreloader dismisses on `preloader:ready` (fired by ScrollHero when slide 0
+  decodes), `window.load`, or a 5s timeout — and is skipped entirely on repeat
+  views in the same session (`sessionStorage`).
 
 ## Placeholder → Real Image Migration
 

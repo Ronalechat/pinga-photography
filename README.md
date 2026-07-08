@@ -17,7 +17,8 @@ Photography portfolio website built with Next.js and Storyblok CMS.
 | `/`        | Landing page with scroll hero |
 | `/gallery` | Full gallery — all categories |
 | `/exhibits` | Exhibit-specific galleries |
-| `/shop` | Shirt enquiry / demand collection |
+| `/shop` | Shop products, enquiries, cart |
+| `/admin/shop` | Token-gated shop admin dashboard |
 | `/enquiry` | Enquiry / contact form        |
 
 ## Local Development
@@ -36,6 +37,7 @@ Copy `.env.example` to `.env.local` and fill in the values:
 STORYBLOK_ACCESS_TOKEN=
 STORYBLOK_PREVIEW_TOKEN=
 STORYBLOK_REVALIDATE_SECRET=
+STORYBLOK_VERSION=
 NEXT_PUBLIC_STORYBLOK_ACCESS_TOKEN=
 NEXT_PUBLIC_SITE_ENV=
 NEXT_PUBLIC_SITE_URL=
@@ -46,10 +48,30 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
 GOOGLE_SHEET_ID=
 GOOGLE_SHEET_RANGE=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+SHOP_CHECKOUT_ENABLED=false
+SHOP_ADMIN_USERNAMES=
+SHOP_ADMIN_SESSION_SECRET=
+# Numeric setup key, 6+ digits recommended; entered with the admin setup number pad.
+SHOP_ADMIN_SETUP_SECRET=
 ```
 
 For the staging deploy, set `NEXT_PUBLIC_SITE_ENV=staging` in Netlify. The
 footer also treats any `NEXT_PUBLIC_SITE_URL` containing `staging` as staging.
+Set `STORYBLOK_VERSION=draft` on the staging deploy when you want staging to
+render unpublished Storyblok content. Leave it empty or set it to `published`
+for production.
+
+Shop setup notes:
+
+- Storyblok schema: `docs/storyblok-shop-schema.md`
+- Supabase schema: `docs/supabase-shop-schema.sql`
+- Checkout/admin environment: `docs/shop-environment.md`
+- Admin PIN auth migration: `docs/supabase-admin-auth-migration.sql`
+- Checkout hardening migration: `docs/supabase-shop-hardening-migration.sql`
 
 ### 3. HTTPS certificates (optional)
 

@@ -3,6 +3,7 @@ import type { SbBlokData } from '@storyblok/react/rsc'
 import ProductEnquiry, {
   type ProductImage,
 } from '@/components/sections/ProductEnquiry/ProductEnquiry'
+import { sbImage, PRODUCT_WIDTH, PRODUCT_QUALITY } from '@/utils/sbImage'
 
 interface SbAsset {
   filename: string
@@ -10,6 +11,7 @@ interface SbAsset {
 }
 
 export interface ProductEnquiryBlokShape extends SbBlokData {
+  product_id?: string
   product_name?: string
   price?: string
   subtitle?: string
@@ -26,13 +28,14 @@ export default function ProductEnquiryBlok({
   const images: ProductImage[] = (blok.images ?? [])
     .filter((image) => Boolean(image.filename))
     .map((image) => ({
-      src: image.filename,
+      src: sbImage(image.filename, PRODUCT_WIDTH, PRODUCT_QUALITY) ?? image.filename,
       alt: image.alt,
     }))
 
   return (
     <div {...storyblokEditable(blok)}>
       <ProductEnquiry
+        productId={blok.product_id || undefined}
         productName={blok.product_name || 'P!nga T-Shirt'}
         price={blok.price || undefined}
         subtitle={blok.subtitle || undefined}

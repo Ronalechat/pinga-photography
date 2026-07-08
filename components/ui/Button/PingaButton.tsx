@@ -14,6 +14,10 @@
  *            to near-black as the fill arrives.
  *            Use for: primary submit actions (EnquiryForm "Send enquiry").
  *
+ * SIZES
+ *   default — canonical form submit / primary action sizing.
+ *   compact — smaller action sizing for dense product controls.
+ *
  * NO TRIANGLE
  *   The decorative triangle in EnquiryForm's submit button is hand-coded in
  *   that component. It is not a feature of PingaButton and must not be added.
@@ -31,6 +35,7 @@ import styles from './PingaButton.module.css'
 export interface PingaButtonProps {
   variant:   'ghost' | 'sweep'
   children:  React.ReactNode
+  size?:     'default' | 'compact'
   type?:     'button' | 'submit' | 'reset'
   disabled?: boolean
   onClick?:  React.MouseEventHandler<HTMLButtonElement>
@@ -43,13 +48,19 @@ export interface PingaButtonProps {
 export default function PingaButton({
   variant,
   children,
+  size = 'default',
   type = 'button',
   disabled,
   onClick,
   className,
   'aria-label': ariaLabel,
 }: PingaButtonProps) {
-  const cls = [styles.root, styles[variant], className].filter(Boolean).join(' ')
+  const cls = [
+    styles.root,
+    styles[variant],
+    size === 'compact' ? styles.compact : '',
+    className,
+  ].filter(Boolean).join(' ')
 
   return (
     <button

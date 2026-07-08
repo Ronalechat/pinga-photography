@@ -95,6 +95,11 @@
   transition: border-color 380ms var(--easing-cinematic);
 }
 
+.compact.sweep {
+  min-height: 38px;
+  padding: 9px 18px;
+}
+
 /* White fill layer — sweeps in from the left on hover */
 .sweep::before {
   content: '';

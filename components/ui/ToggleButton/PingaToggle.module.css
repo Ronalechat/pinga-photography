@@ -30,6 +30,13 @@
   gap: 6px;
 }
 
+.stacked {
+  display: grid;
+  grid-template-columns: minmax(0, 300px);
+  gap: 7px;
+  align-items: stretch;
+}
+
 /* ── Individual option button ─────────────────────────────────────────────── */
 
 .option {
@@ -75,6 +82,17 @@
     border-color 320ms var(--easing-cinematic);
 }
 
+.stacked .option {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.compact .option {
+  min-height: 34px;
+  padding: 8px 14px;
+}
+
 /* ── Hover state — communicates interactivity before click ──────────────────── */
 
 .option:not(.selected):hover {
@@ -109,6 +127,12 @@
 .label {
   position: relative;
   z-index: 1;
+}
+
+.stacked .label {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
 }
 
 /* ── Primary variant — higher contrast resting state ────────────────────── */

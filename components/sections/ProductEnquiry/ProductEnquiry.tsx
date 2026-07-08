@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Typography from '@/components/ui/Typography/Typography'
 import PingaButton from '@/components/ui/Button/PingaButton'
+import ProductMediaViewer, {
+  type ProductMediaImage,
+} from '@/components/ui/ProductMediaViewer/ProductMediaViewer'
 import { analytics } from '@/lib/analytics'
-import utilStyles from '@/styles/utility.module.css'
 import styles from './ProductEnquiry.module.css'
 
 const SIZE_OPTIONS = ['Small', 'Medium', 'Large', 'X-Large'] as const
@@ -13,12 +15,10 @@ type ShirtSize = typeof SIZE_OPTIONS[number]
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 type FieldErrors = { name?: string; email?: string; phone?: string; quantity?: string }
 
-export interface ProductImage {
-  src: string
-  alt?: string
-}
+export type ProductImage = ProductMediaImage
 
 export interface ProductEnquiryProps {
+  productId?: string
   productName: string
   price?: string
   subtitle?: string
@@ -29,6 +29,7 @@ export interface ProductEnquiryProps {
 }
 
 export default function ProductEnquiry({
+  productId,
   productName,
   price,
   subtitle = 'Register your interest for the next print run.',
@@ -37,7 +38,6 @@ export default function ProductEnquiry({
   ctaLabel = 'Send enquiry',
   initialStatus = 'idle',
 }: ProductEnquiryProps) {
-  const [activeImage, setActiveImage] = useState(0)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -45,47 +45,6 @@ export default function ProductEnquiry({
   const [quantity, setQuantity] = useState('1')
   const [status, setStatus] = useState<Status>(initialStatus)
   const [errors, setErrors] = useState<FieldErrors>({})
-  const touchStartXRef = useRef<number | null>(null)
-  const swipeHandledRef = useRef(false)
-  const selectedImage = images[activeImage]
-  const hasMultipleImages = images.length > 1
-
-  function showImage(direction: 'previous' | 'next') {
-    if (!hasMultipleImages) return
-    setActiveImage((current) => (
-      direction === 'next'
-        ? (current + 1) % images.length
-        : (current - 1 + images.length) % images.length
-    ))
-  }
-
-  function handleImageNavClick(direction: 'previous' | 'next') {
-    if (swipeHandledRef.current) {
-      swipeHandledRef.current = false
-      return
-    }
-
-    showImage(direction)
-  }
-
-  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
-    touchStartXRef.current = e.touches[0]?.clientX ?? null
-  }
-
-  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
-    const startX = touchStartXRef.current
-    touchStartXRef.current = null
-    if (startX === null) return
-
-    const endX = e.changedTouches[0]?.clientX
-    if (endX === undefined) return
-
-    const deltaX = endX - startX
-    if (Math.abs(deltaX) < 40) return
-
-    swipeHandledRef.current = true
-    showImage(deltaX > 0 ? 'next' : 'previous')
-  }
 
   function validate(): FieldErrors {
     const next: FieldErrors = {}
@@ -122,6 +81,7 @@ export default function ProductEnquiry({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          productId,
           productName,
           productPrice: price,
           name,
@@ -145,89 +105,14 @@ export default function ProductEnquiry({
     }
   }
 
-  if (status === 'sent') {
-    return (
-      <section className={styles.root} aria-label="Shop enquiry sent">
-        <div className={styles.sent}>
-          <Typography variant="displayThin" as="p" className={styles.sentTitle}>
-            Thanks{ name.trim() ? `, ${name.trim().split(' ')[0]}` : '' }.
-          </Typography>
-          <Typography variant="body" as="p" color="var(--color-text-muted-high)">
-            Paul will be in touch when the shirt run is ready.
-          </Typography>
-        </div>
-      </section>
-    )
-  }
-
   return (
-    <section className={styles.root} aria-label={`${productName} enquiry`}>
+    <section
+      className={styles.root}
+      aria-label={status === 'sent' ? `${productName} enquiry sent` : `${productName} enquiry`}
+    >
       <div className={styles.inner}>
         <div className={styles.media}>
-          <div
-            className={styles.imageFrame}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            {selectedImage?.src ? (
-              <img
-                src={selectedImage.src}
-                alt={selectedImage.alt || productName}
-                className={utilStyles.imgBlock}
-                loading="eager"
-                decoding="async"
-                draggable={false}
-              />
-            ) : (
-              <div className={styles.placeholder}>
-                <Typography variant="eyebrow">{productName}</Typography>
-              </div>
-            )}
-
-            {hasMultipleImages && (
-              <>
-                <button
-                  type="button"
-                  className={`${styles.imageNav} ${styles.imageNavPrevious}`}
-                  onClick={() => handleImageNavClick('previous')}
-                  aria-label="Show previous product image"
-                />
-                <button
-                  type="button"
-                  className={`${styles.imageNav} ${styles.imageNavNext}`}
-                  onClick={() => handleImageNavClick('next')}
-                  aria-label="Show next product image"
-                />
-              </>
-            )}
-          </div>
-
-          {hasMultipleImages && (
-            <div className={styles.thumbnails} aria-label="Product images">
-              {images.map((image, index) => (
-                <button
-                  key={`${image.src}-${index}`}
-                  type="button"
-                  className={[
-                    styles.thumbnail,
-                    index === activeImage ? styles.thumbnailActive : '',
-                  ].filter(Boolean).join(' ')}
-                  onClick={() => setActiveImage(index)}
-                  aria-label={`Show image ${index + 1}`}
-                  aria-pressed={index === activeImage}
-                >
-                  <img
-                    src={image.src}
-                    alt=""
-                    className={utilStyles.imgBlock}
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          <ProductMediaViewer images={images} label={productName} />
         </div>
 
         <div className={styles.content}>
@@ -248,149 +133,160 @@ export default function ProductEnquiry({
             </Typography>
           </div>
 
-          <form className={styles.form} onSubmit={handleSubmit} noValidate>
-            <div className={styles.field}>
-              <label htmlFor="pe-name" className={styles.label}>
-                <Typography variant="label">Name</Typography>
-              </label>
-              <input
-                id="pe-name"
-                name="name"
-                type="text"
-                required
-                autoComplete="name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value)
-                  if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
-                }}
-                className={[styles.input, errors.name ? styles.inputError : ''].filter(Boolean).join(' ')}
-                aria-invalid={!!errors.name}
-                aria-describedby={errors.name ? 'pe-name-error' : undefined}
-              />
-              {errors.name && (
-                <Typography variant="caption" as="p" id="pe-name-error" className={styles.fieldError}>
-                  {errors.name}
-                </Typography>
-              )}
+          {status === 'sent' ? (
+            <div className={styles.sent} role="status">
+              <Typography variant="headingMedium" as="p" className={styles.sentTitle}>
+                Thanks{ name.trim() ? `, ${name.trim().split(' ')[0]}` : '' }.
+              </Typography>
+              <Typography variant="body" as="p" color="var(--color-text-muted-high)">
+                Paul will be in touch when the shirt run is ready.
+              </Typography>
             </div>
-
-            <div className={styles.field}>
-              <label htmlFor="pe-email" className={styles.label}>
-                <Typography variant="label">Email</Typography>
-              </label>
-              <input
-                id="pe-email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (errors.email) setErrors(prev => ({ ...prev, email: undefined }))
-                }}
-                className={[styles.input, errors.email ? styles.inputError : ''].filter(Boolean).join(' ')}
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'pe-email-error' : undefined}
-              />
-              {errors.email && (
-                <Typography variant="caption" as="p" id="pe-email-error" className={styles.fieldError}>
-                  {errors.email}
-                </Typography>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="pe-phone" className={styles.label}>
-                <Typography variant="label">Phone</Typography>
-              </label>
-              <input
-                id="pe-phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={(e) => {
-                  const filtered = e.target.value.replace(/[^\d\s+\-(). ]/g, '')
-                  setPhone(filtered)
-                  if (errors.phone) setErrors(prev => ({ ...prev, phone: undefined }))
-                }}
-                className={[styles.input, errors.phone ? styles.inputError : ''].filter(Boolean).join(' ')}
-                aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? 'pe-phone-error' : undefined}
-              />
-              {errors.phone && (
-                <Typography variant="caption" as="p" id="pe-phone-error" className={styles.fieldError}>
-                  {errors.phone}
-                </Typography>
-              )}
-            </div>
-
-            <div className={styles.fieldGrid}>
+          ) : (
+            <form className={styles.form} onSubmit={handleSubmit} noValidate>
               <div className={styles.field}>
-                <label htmlFor="pe-size" className={styles.label}>
-                  <Typography variant="label">Size</Typography>
-                </label>
-                <select
-                  id="pe-size"
-                  name="size"
-                  value={size}
-                  onChange={(e) => setSize(e.target.value as ShirtSize)}
-                  className={styles.input}
-                >
-                  {SIZE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.field}>
-                <label htmlFor="pe-quantity" className={styles.label}>
-                  <Typography variant="label">Quantity</Typography>
+                <label htmlFor="pe-name" className={styles.label}>
+                  <Typography variant="label">Name</Typography>
                 </label>
                 <input
-                  id="pe-quantity"
-                  name="quantity"
-                  type="number"
+                  id="pe-name"
+                  name="name"
+                  type="text"
                   required
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  value={quantity}
+                  autoComplete="name"
+                  value={name}
                   onChange={(e) => {
-                    setQuantity(e.target.value)
-                    if (errors.quantity) setErrors(prev => ({ ...prev, quantity: undefined }))
+                    setName(e.target.value)
+                    if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
                   }}
-                  className={[styles.input, errors.quantity ? styles.inputError : ''].filter(Boolean).join(' ')}
-                  aria-invalid={!!errors.quantity}
-                  aria-describedby={errors.quantity ? 'pe-quantity-error' : undefined}
+                  className={[styles.input, errors.name ? styles.inputError : ''].filter(Boolean).join(' ')}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'pe-name-error' : undefined}
                 />
-                {errors.quantity && (
-                  <Typography variant="caption" as="p" id="pe-quantity-error" className={styles.fieldError}>
-                    {errors.quantity}
+                {errors.name && (
+                  <Typography variant="caption" as="p" id="pe-name-error" className={styles.fieldError}>
+                    {errors.name}
                   </Typography>
                 )}
               </div>
-            </div>
 
-            {status === 'error' && (
-              <Typography variant="caption" as="p" className={styles.formError} role="alert">
-                Something went wrong. Please try again.
-              </Typography>
-            )}
+              <div className={styles.field}>
+                <label htmlFor="pe-email" className={styles.label}>
+                  <Typography variant="label">Email</Typography>
+                </label>
+                <input
+                  id="pe-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (errors.email) setErrors(prev => ({ ...prev, email: undefined }))
+                  }}
+                  className={[styles.input, errors.email ? styles.inputError : ''].filter(Boolean).join(' ')}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'pe-email-error' : undefined}
+                />
+                {errors.email && (
+                  <Typography variant="caption" as="p" id="pe-email-error" className={styles.fieldError}>
+                    {errors.email}
+                  </Typography>
+                )}
+              </div>
 
-            <div className={styles.submitRow}>
-              <PingaButton
-                variant="sweep"
-                type="submit"
-                disabled={status === 'sending'}
-                className={styles.submitButton}
-              >
-                {status === 'sending' ? 'Sending...' : ctaLabel}
-              </PingaButton>
-            </div>
-          </form>
+              <div className={styles.field}>
+                <label htmlFor="pe-phone" className={styles.label}>
+                  <Typography variant="label">Phone</Typography>
+                </label>
+                <input
+                  id="pe-phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    const filtered = e.target.value.replace(/[^\d\s+\-(). ]/g, '')
+                    setPhone(filtered)
+                    if (errors.phone) setErrors(prev => ({ ...prev, phone: undefined }))
+                  }}
+                  className={[styles.input, errors.phone ? styles.inputError : ''].filter(Boolean).join(' ')}
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'pe-phone-error' : undefined}
+                />
+                {errors.phone && (
+                  <Typography variant="caption" as="p" id="pe-phone-error" className={styles.fieldError}>
+                    {errors.phone}
+                  </Typography>
+                )}
+              </div>
+
+              <div className={styles.fieldGrid}>
+                <div className={styles.field}>
+                  <label htmlFor="pe-size" className={styles.label}>
+                    <Typography variant="label">Size</Typography>
+                  </label>
+                  <select
+                    id="pe-size"
+                    name="size"
+                    value={size}
+                    onChange={(e) => setSize(e.target.value as ShirtSize)}
+                    className={styles.input}
+                  >
+                    {SIZE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.field}>
+                  <label htmlFor="pe-quantity" className={styles.label}>
+                    <Typography variant="label">Quantity</Typography>
+                  </label>
+                  <input
+                    id="pe-quantity"
+                    name="quantity"
+                    type="number"
+                    required
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    value={quantity}
+                    onChange={(e) => {
+                      setQuantity(e.target.value)
+                      if (errors.quantity) setErrors(prev => ({ ...prev, quantity: undefined }))
+                    }}
+                    className={[styles.input, errors.quantity ? styles.inputError : ''].filter(Boolean).join(' ')}
+                    aria-invalid={!!errors.quantity}
+                    aria-describedby={errors.quantity ? 'pe-quantity-error' : undefined}
+                  />
+                  {errors.quantity && (
+                    <Typography variant="caption" as="p" id="pe-quantity-error" className={styles.fieldError}>
+                      {errors.quantity}
+                    </Typography>
+                  )}
+                </div>
+              </div>
+
+              {status === 'error' && (
+                <Typography variant="caption" as="p" className={styles.formError} role="alert">
+                  Something went wrong. Please try again.
+                </Typography>
+              )}
+
+              <div className={styles.submitRow}>
+                <PingaButton
+                  variant="sweep"
+                  type="submit"
+                  disabled={status === 'sending'}
+                  className={styles.submitButton}
+                >
+                  {status === 'sending' ? 'Sending...' : ctaLabel}
+                </PingaButton>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </section>
