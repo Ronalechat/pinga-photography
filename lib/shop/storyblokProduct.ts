@@ -8,6 +8,7 @@ import type {
   StockMode,
 } from '@/lib/shop/types'
 import { hasSupabaseConfig, supabaseRequest } from '@/lib/shop/supabaseRest'
+import { sbImage, PRODUCT_WIDTH, PRODUCT_QUALITY } from '@/utils/sbImage'
 
 interface SbAsset {
   filename: string
@@ -194,7 +195,7 @@ export function mapShopProductBlok(blok: ShopProductBlokShape): ShopProductConfi
     images: (blok.images ?? [])
       .filter((image) => Boolean(image.filename))
       .map((image) => ({
-        src: image.filename,
+        src: sbImage(image.filename, PRODUCT_WIDTH, PRODUCT_QUALITY) ?? image.filename,
         alt: image.alt,
       })),
     mode: toMode(blok.mode),

@@ -26,6 +26,12 @@ export interface PhotoConfig {
    * e.g. src: '/images/street-01.jpg'
    */
   src?: string
+  /** Responsive srcset — lets the browser pick the width matching layout × DPR */
+  srcSet?: string
+  /** sizes attribute paired with srcSet */
+  sizes?: string
+  /** High-res URL for the lightbox — swapped in after the cached grid image shows */
+  srcHigh?: string
 }
 
 export interface KineticGridProps {
@@ -99,6 +105,8 @@ function Card({ item, colIndex, color, onClick, cardIndex }: {
           <div className={styles.skeleton} aria-hidden="true" />
           <img
             src={item.src}
+            srcSet={item.srcSet}
+            sizes={item.srcSet ? item.sizes : undefined}
             alt={`${item.cat} ${item.num}`}
             className={utilStyles.imgBlock}
             loading={isEager ? 'eager' : 'lazy'}

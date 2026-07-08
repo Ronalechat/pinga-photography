@@ -3,6 +3,7 @@ import type { SbBlokData } from '@storyblok/react/rsc'
 import ProductEnquiry, {
   type ProductImage,
 } from '@/components/sections/ProductEnquiry/ProductEnquiry'
+import { sbImage, PRODUCT_WIDTH, PRODUCT_QUALITY } from '@/utils/sbImage'
 
 interface SbAsset {
   filename: string
@@ -27,7 +28,7 @@ export default function ProductEnquiryBlok({
   const images: ProductImage[] = (blok.images ?? [])
     .filter((image) => Boolean(image.filename))
     .map((image) => ({
-      src: image.filename,
+      src: sbImage(image.filename, PRODUCT_WIDTH, PRODUCT_QUALITY) ?? image.filename,
       alt: image.alt,
     }))
 

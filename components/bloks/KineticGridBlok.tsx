@@ -2,6 +2,15 @@ import { storyblokEditable } from '@storyblok/react/rsc'
 import type { SbBlokData } from '@storyblok/react/rsc'
 import KineticGrid, { type PhotoConfig } from '@/components/sections/KineticGrid/KineticGrid'
 import { toSlug } from '@/utils/toSlug'
+import {
+  sbImage,
+  sbSrcSet,
+  GRID_WIDTHS,
+  GRID_SIZES,
+  GRID_QUALITY,
+  LIGHTBOX_WIDTH,
+  LIGHTBOX_QUALITY,
+} from '@/utils/sbImage'
 
 interface SbAsset {
   filename: string
@@ -42,9 +51,12 @@ export default function KineticGridBlok({
 
     categories[cat].push({
       cat,
-      src:   p.image?.filename || undefined,
-      ratio: [p.ratio_w || 3, p.ratio_h || 4],
-      num:   p.num || String(categories[cat].length + 1).padStart(2, '0'),
+      src:     sbImage(p.image?.filename, 800, GRID_QUALITY),
+      srcSet:  sbSrcSet(p.image?.filename, GRID_WIDTHS, GRID_QUALITY),
+      sizes:   GRID_SIZES,
+      srcHigh: sbImage(p.image?.filename, LIGHTBOX_WIDTH, LIGHTBOX_QUALITY),
+      ratio:   [p.ratio_w || 3, p.ratio_h || 4],
+      num:     p.num || String(categories[cat].length + 1).padStart(2, '0'),
     })
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { COLOR, DURATION, EASING, RADIUS, SPACE } from '@tokens'
 import Typography from '@/components/ui/Typography/Typography'
 import { analytics } from '@/lib/analytics'
@@ -14,6 +14,8 @@ export interface LightboxItem {
   num: string
   ratio: [number, number]
   src?: string
+  /** High-res version for the full-screen stage — swapped in once decoded */
+  srcHigh?: string
 }
 
 export interface LightboxProps {
@@ -55,6 +57,27 @@ export default function Lightbox({
   const item      = list[index]
   const color     = colors[item.cat] ?? COLOR.bgSurface
   const thumbsRef = useRef<HTMLDivElement>(null)
+
+  // Two-stage stage image: the grid-sized src is already in the HTTP cache, so
+  // it shows instantly; the high-res version is fetched and fully decoded
+  // off-screen, then swapped in — same photo, just sharper, so no flash.
+  // Keyed by the base src so navigating resets the derivation without a
+  // state-clearing effect.
+  const [hiRes, setHiRes] = useState<{ key: string; src: string } | null>(null)
+  useEffect(() => {
+    const base = item.src
+    const target = item.srcHigh
+    if (!base || !target || target === base) return
+    if (hiRes?.key === base) return
+    let cancelled = false
+    const img = new Image()
+    img.src = target
+    img.decode()
+      .then(() => { if (!cancelled) setHiRes({ key: base, src: target }) })
+      .catch(() => { /* decode unsupported or failed — keep the grid-sized image */ })
+    return () => { cancelled = true }
+  }, [item.src, item.srcHigh, hiRes?.key])
+  const stageSrc = hiRes && hiRes.key === item.src ? hiRes.src : item.src
 
   // Wrap navigation and close so we can track before delegating to props
   const navigate = useCallback((dir: 'prev' | 'next') => {
@@ -120,7 +143,7 @@ export default function Lightbox({
       <div className={styles.stage}>
         {item.src ? (
           <img
-            src={item.src}
+            src={stageSrc}
             alt={`${item.cat} ${item.num}`}
             className={utilStyles.imgContain}
             onContextMenu={(e) => e.preventDefault()}

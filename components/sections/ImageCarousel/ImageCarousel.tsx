@@ -13,6 +13,10 @@ export interface SlideConfig {
    * e.g. src: '/images/street-01.jpg'
    */
   src?: string
+  /** Responsive srcset — lets the browser pick the width matching viewport × DPR */
+  srcSet?: string
+  /** sizes attribute paired with srcSet */
+  sizes?: string
   /** Alt text for accessibility */
   alt?: string
   /**
@@ -79,7 +83,11 @@ function CarouselViewer({
           {slide.src ? (
             <img
               src={slide.src}
+              srcSet={slide.srcSet}
+              sizes={slide.srcSet ? slide.sizes : undefined}
               alt={slide.alt ?? ''}
+              loading={i === 0 ? undefined : 'lazy'}
+              decoding="async"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               onContextMenu={(e) => e.preventDefault()}
               draggable={false}
